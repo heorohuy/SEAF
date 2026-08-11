@@ -2,7 +2,7 @@ import { useRef, useEffect } from 'react';
 import Planet from './Planet';
 import Sector from './Sector';
 
-export default function Map({ containerRef, planets, connections, sectors, selectedPlanet, associatedPlanetKeys, associatedPlanetIcons, onSelect, transformStyle, onMouseDown, onMouseMove, onMouseUp, onWheel }) {
+export default function Map({ containerRef, planets, connections, sectors, selectedPlanet, associatedFobKeys, associatedPlanetIcons, onSelect, transformStyle, onMouseDown, onMouseMove, onMouseUp, onWheel }) {
   const localRef = useRef(null);
   const ref = containerRef || localRef;
 
@@ -77,7 +77,7 @@ export default function Map({ containerRef, planets, connections, sectors, selec
                 planet={planet}
                 selected={selectedPlanet?.id === planet.id}
                 hasAssociatedMatch={
-                  associatedPlanetKeys.has(planetNameKey) || associatedPlanetKeys.has(planetIdKey)
+                  associatedFobKeys.has(planetNameKey) || associatedFobKeys.has(planetIdKey)
                 }
                 associatedRegimentIcon={associatedRegimentIcon}
                 onSelect={onSelect}

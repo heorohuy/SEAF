@@ -355,10 +355,8 @@ export default function App() {
 
   const selectedPlanetFobs = getFobsForPlanet(selectedPlanet);
   const selectedPlanetRegiments = getRegimentsForPlanet(selectedPlanet);
-  const associatedPlanetKeys = new Set([
-    ...Object.keys(fobMap),
-    ...Object.keys(regimentMap),
-  ]);
+
+  const associatedFobKeys = new Set(Object.keys(fobMap));
 
   const associatedPlanetIcons = Object.entries(regimentMap).reduce((acc, [key, regiments]) => {
     if (Array.isArray(regiments) && regiments.length > 0) {
@@ -422,7 +420,8 @@ export default function App() {
           connections={connections}
           sectors={sectors}
           selectedPlanet={selectedPlanet}
-          associatedPlanetKeys={associatedPlanetKeys}
+          //associatedPlanetKeys={associatedPlanetKeys}
+          associatedFobKeys={associatedFobKeys}
           associatedPlanetIcons={associatedPlanetIcons}
           onSelect={handleSelectPlanet}
           transformStyle={{
@@ -491,14 +490,6 @@ export default function App() {
           </div>
 
           <h1>{selectedPlanet?.name ?? '—'}</h1>
-
-          {/* <div className="war-summary">
-            <div className="status-label">WAR SEASON</div>
-            <div className="status-value">#{warInfo?.warId ?? '—'}</div>
-            <div className="planet-meta">
-              {formatDate(warInfo?.startDate)} — {formatDate(warInfo?.endDate)}
-            </div>
-          </div> */}
 
           <div className="faction">
             <span className={`faction-dot ${selectedPlanet?.faction ?? ''}`} />
