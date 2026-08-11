@@ -38,7 +38,7 @@ button {
   z-index: 10;
 }
 
-.logo {
+/* .logo {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -46,7 +46,7 @@ button {
   font-weight: 800;
   letter-spacing: 2px;
   text-transform: uppercase;
-}
+} */
 
 .logo svg {
   color: #f4c542;
@@ -576,4 +576,39 @@ button {
 .planet-svg.selected .planet-glow {
   opacity: 0.35;
   r: 5;
+}
+
+.logo {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.logo-expanded {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  padding: 10px 14px;
+
+  background: rgba(8, 12, 18, 0.98);
+  border: 1px solid rgba(244, 197, 66, 0.35);
+  color: #c8d0d8;
+
+  font-size: 10px;
+  line-height: 1.5;
+  letter-spacing: 1px;
+  white-space: nowrap;
+
+  z-index: 20;
 }

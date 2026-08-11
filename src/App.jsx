@@ -184,6 +184,8 @@ function buildRegimentMap(sheetRows) {
 }
 
 export default function App() {
+  const [logoExpanded, setLogoExpanded] = useState(false);
+
   const [planets, setPlanets] = useState(fallbackPlanets);
   const [connections, setConnections] = useState(fallbackConnections);
   const [sectors, setSectors] = useState(fallbackSectors);
@@ -191,7 +193,7 @@ export default function App() {
   const [selectedPlanet, setSelectedPlanet] = useState(fallbackPlanets[0]);
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [searchError, setSearchError] = useState(null);
 
@@ -209,8 +211,8 @@ export default function App() {
 
   const [activeFob, setActiveFob] = useState(null);
   const [activeRegiment, setActiveRegiment] = useState(null);
-  
-  
+
+
 
   useEffect(() => {
     let mounted = true;
@@ -396,9 +398,19 @@ export default function App() {
   return (
     <div className="app">
       <header className="top-bar">
-        <div className="logo">
+        <div
+          className={`logo ${logoExpanded ? 'expanded' : ''}`}
+          onClick={() => setLogoExpanded((prev) => !prev)}
+        >
           <Shield size={24} />
-          <span>GALACTIC WAR</span>
+          <span>S.E.A.F. - L.E.M.O.N</span>
+
+          {logoExpanded && (
+            <div className="logo-expanded">
+              <div>SUPER EARTH ARMED FORCES</div>
+              <div>LOGISTICS & EMERGENCY MOVEMENT OPERATIONS NETWORK</div>
+            </div>
+          )}
         </div>
 
         <div className="war-status">
@@ -499,12 +511,12 @@ export default function App() {
                 {selectedPlanet?.faction === 'super-earth'
                   ? 'SUPER EARTH'
                   : selectedPlanet?.faction === 'automatons'
-                  ? 'AUTOMATON'
-                  : selectedPlanet?.faction === 'terminids'
-                  ? 'TERMINID'
-                  : selectedPlanet?.faction === 'illuminate'
-                  ? 'ILLUMINATE'
-                  : 'NEUTRAL'}
+                    ? 'AUTOMATON'
+                    : selectedPlanet?.faction === 'terminids'
+                      ? 'TERMINID'
+                      : selectedPlanet?.faction === 'illuminate'
+                        ? 'ILLUMINATE'
+                        : 'NEUTRAL'}
               </div>
               <div className="planet-meta">Sector: {selectedPlanet?.sector ?? '—'}</div>
             </div>
