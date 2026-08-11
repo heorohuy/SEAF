@@ -17,6 +17,8 @@ import infantryIcon from './assets/1986-JJ-SEAFICONS-INFANTRY.png';
 import cavalryIcon from './assets/1986-JJ-SEAFICONS-MECHANIZED.png';
 import sapperIcon from './assets/1986-JJ-SEAFICONS-SAPPER.png';
 
+import AdBanner from './components/AdBanner';
+
 const parseCellValue = (cell) => {
   if (cell == null) return undefined;
   if (typeof cell === 'number') return cell;

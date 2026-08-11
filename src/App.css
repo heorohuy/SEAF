@@ -92,12 +92,15 @@ button {
 
 .map {
   position: absolute;
-  inset: 0;
+  top: 90px;
+  right: 0;
+  bottom: 0;
+  left: 0;
 }
 
 .map-title {
   position: absolute;
-  top: 24px;
+  top: 114px;
   left: 28px;
   display: flex;
   align-items: center;
@@ -232,7 +235,7 @@ button {
 
 .search-widget {
   position: absolute;
-  top: 64px;
+  top: 154px;
   left: 24px;
   z-index: 5;
   display: flex;
@@ -611,4 +614,67 @@ button {
   white-space: nowrap;
 
   z-index: 20;
+}
+
+.ad-strip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: 90px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  padding: 0 24px;
+
+  background: rgba(5, 7, 10, 0.96);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+  z-index: 6;
+}
+
+.ad-banner {
+  width: min(728px, 100%);
+  height: 90px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+@media (max-width: 700px) {
+  .ad-strip {
+    height: 60px;
+    padding: 0 12px;
+  }
+
+  .ad-banner {
+    height: 60px;
+  }
+
+  .map {
+    top: 60px;
+  }
+
+  .map-title {
+    top: 76px;
+    left: 16px;
+  }
+
+  .search-widget {
+    top: 112px;
+    left: 16px;
+    right: 16px;
+  }
+
+  .search-form {
+    width: 100%;
+  }
+
+  .search-form input {
+    min-width: 0;
+  }
 }
