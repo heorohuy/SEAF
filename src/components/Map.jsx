@@ -1,12 +1,13 @@
-import React, { useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import Planet from './Planet';
 import Sector from './Sector';
 
-export default function Map({ planets, connections, sectors, selectedPlanet, onSelect, transformStyle, onMouseDown, onMouseMove, onMouseUp, onWheel }) {
-  const containerRef = useRef(null);
+export default function Map({ containerRef, planets, connections, sectors, selectedPlanet, associatedPlanetKeys, associatedPlanetIcons, onSelect, transformStyle, onMouseDown, onMouseMove, onMouseUp, onWheel }) {
+  const localRef = useRef(null);
+  const ref = containerRef || localRef;
 
   useEffect(() => {
-    const node = containerRef.current;
+    const node = ref.current;
     if (!node || !onWheel) return;
 
     const handler = (e) => {
@@ -16,7 +17,7 @@ export default function Map({ planets, connections, sectors, selectedPlanet, onS
 
     node.addEventListener('wheel', handler, { passive: false });
     return () => node.removeEventListener('wheel', handler);
-  }, [onWheel]);
+  }, [onWheel, ref]);
 
   const flipY = (y) => 960 - y;
   const flippedSectors = sectors.map((sector) => ({
@@ -36,8 +37,15 @@ export default function Map({ planets, connections, sectors, selectedPlanet, onS
     Math.max(...flippedPlanets.map((planet) => Math.hypot(planet.x - 480, planet.y - 480))) + 20
   );
 
+  const normalizeKey = (value) =>
+    String(value ?? '')
+      .toLowerCase()
+      .trim()
+      .replace(/[-_–—]+/g, ' ')
+      .replace(/\s+/g, ' ');
+
   return (
-    <div ref={containerRef} className="map" onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}>
+    <div ref={ref} className="map" onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}>
       <svg className="galaxy-svg" viewBox="0 0 960 960" preserveAspectRatio="xMidYMid meet" style={transformStyle}>
         <defs>
           <clipPath id="galaxy-mask">
@@ -59,9 +67,23 @@ export default function Map({ planets, connections, sectors, selectedPlanet, onS
             return <line key={`${fromId}-${toId}`} className="connection" x1={from.x} y1={from.y} x2={to.x} y2={to.y} />;
           })}
 
-          {flippedPlanets.map((planet) => (
-            <Planet key={planet.id} planet={planet} selected={selectedPlanet?.id === planet.id} onSelect={onSelect} />
-          ))}
+          {flippedPlanets.map((planet) => {
+            const planetNameKey = normalizeKey(planet.name);
+            const planetIdKey = normalizeKey(planet.id);
+            const associatedRegimentIcon = associatedPlanetIcons?.[planetNameKey] || associatedPlanetIcons?.[planetIdKey];
+            return (
+              <Planet
+                key={planet.id}
+                planet={planet}
+                selected={selectedPlanet?.id === planet.id}
+                hasAssociatedMatch={
+                  associatedPlanetKeys.has(planetNameKey) || associatedPlanetKeys.has(planetIdKey)
+                }
+                associatedRegimentIcon={associatedRegimentIcon}
+                onSelect={onSelect}
+              />
+            );
+          })}
         </g>
 
         <circle cx="480" cy="480" r="440" className="galaxy-boundary" fill="none" />

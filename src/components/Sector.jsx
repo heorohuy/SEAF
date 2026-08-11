@@ -1,5 +1,4 @@
-import React from 'react';
-
+ 
 export default function Sector({ sector }) {
   const hasPolygon = Array.isArray(sector.points) && sector.points.length > 0;
   const polygonPoints = hasPolygon

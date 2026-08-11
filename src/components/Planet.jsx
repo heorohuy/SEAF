@@ -1,6 +1,7 @@
-import React from 'react';
+ 
+import factoryIcon from '../assets/1986-JJ-SEAFICONS-OUTPOST.png';
 
-export default function Planet({ planet, selected, onSelect }) {
+export default function Planet({ planet, selected, hasAssociatedMatch, associatedRegimentIcon, onSelect }) {
   return (
     <g
       key={planet.id}
@@ -21,6 +22,30 @@ export default function Planet({ planet, selected, onSelect }) {
       <text className="planet-label" x={planet.x + 2.8} y={planet.y + 1.2}>
         {planet.name}
       </text>
+
+      {hasAssociatedMatch && (
+        <image
+          className="factory-icon"
+          href={factoryIcon}
+          x={planet.x + 2.8}
+          y={planet.y - 6}
+          width="6"
+          height="5"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      )}
+
+      {associatedRegimentIcon && (
+        <image
+          className="regiment-icon"
+          href={associatedRegimentIcon}
+          x={planet.x + 2.8}
+          y={planet.y + 2}
+          width="6"
+          height="5"
+          preserveAspectRatio="xMidYMid meet"
+        />
+      )}
     </g>
   );
 }
