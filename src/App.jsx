@@ -409,18 +409,27 @@ useEffect(() => {
     else zoomIn();
   };
 
-  const centerOnPlanet = (planet, targetZoom = zoom) => {
-    const container = mapContainerRef.current;
-    if (!container) return;
+const centerOnPlanet = (planet, targetZoom = zoom) => {
+  const container = mapContainerRef.current;
+  if (!container || !planet) return;
 
-    const rect = container.getBoundingClientRect();
-    const displayY = 960 - planet.y;
+  const rect = container.getBoundingClientRect();
 
-    setOffset({
-      x: rect.width / 2 - (planet.x - 480) * targetZoom - 480,
-      y: rect.height / 2 - (displayY - 480) * targetZoom - 480,
-    });
-  };
+  const svgScale = Math.min(
+    rect.width / 960,
+    rect.height / 960
+  );
+
+  const displayY = 960 - planet.y;
+
+  const planetOffsetX = (planet.x - 480) * svgScale;
+  const planetOffsetY = (displayY - 480) * svgScale;
+
+  setOffset({
+    x: -planetOffsetX * targetZoom,
+    y: -planetOffsetY * targetZoom,
+  });
+};
 
   const handleSearchSubmit = (event) => {
     event.preventDefault();
