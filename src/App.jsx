@@ -128,43 +128,84 @@ function buildFobMap(sheetRows) {
 }
 
 function buildRegimentMap(sheetRows) {
-  if (!sheetRows || sheetRows.length === 0) return {};
+  if (!sheetRows || sheetRows.length === 0) {
+    return {
+      regimentMap: {},
+      firstRegiment: null,
+    };
+  }
+
+  let firstRegiment = null;
 
   const firstRow = sheetRows[0];
+
   const hasHeaders =
-    firstRow.some((cell) => typeof cell === 'string' && /(regiment|unit|deployed|deployment|planet|world|location)/i.test(cell)) &&
-    firstRow.some((cell) => typeof cell === 'string' && /(regiment|unit|name)/i.test(cell));
+    firstRow.some(
+      (cell) =>
+        typeof cell === 'string' &&
+        /(regiment|unit|deployed|deployment|planet|world|location)/i.test(cell)
+    ) &&
+    firstRow.some(
+      (cell) =>
+        typeof cell === 'string' &&
+        /(regiment|unit|name)/i.test(cell)
+    );
 
   const dataRows = hasHeaders ? sheetRows.slice(1) : sheetRows;
-  const headers = hasHeaders ? firstRow.map((h) => (typeof h === 'string' ? h.toLowerCase() : '')) : [];
-  const findHeader = (re) => headers.findIndex((h) => re.test(h));
+
+  const headers = hasHeaders
+    ? firstRow.map((h) =>
+        typeof h === 'string' ? h.toLowerCase() : ''
+      )
+    : [];
+
+  const findHeader = (re) =>
+    headers.findIndex((h) => re.test(h));
 
   const nameIdx = hasHeaders
     ? findHeader(/regiment|unit|name/)
     : 0;
+
   const specialtyIdx = hasHeaders
     ? findHeader(/specialty|unit specialty|unit type|role/)
     : 1;
+
   const fdpIdx = hasHeaders
-    ? findHeader(/fdp|fully deployable personal|fully deployable|fdp/i)
+    ? findHeader(/fdp|fully deployable personal|fully deployable/)
     : 2;
+
   const warbondsIdx = hasHeaders
     ? findHeader(/warb|war bond|warbond|bonds/)
     : 3;
+
   const surplusIdx = hasHeaders
     ? findHeader(/surplus|extra|spare/)
     : 4;
+
   const deployedIdx = hasHeaders
     ? findHeader(/deployed|deployment|planet|world|location|system/)
     : 5;
 
-  return dataRows.reduce((acc, row) => {
+  const regimentMap = dataRows.reduce((acc, row) => {
     if (!Array.isArray(row)) return acc;
+
     const planetValue = row[deployedIdx];
     const nameValue = row[nameIdx];
-    if (!nameValue || typeof planetValue !== 'string') return acc;
+
+    if (!nameValue || typeof planetValue !== 'string') {
+      return acc;
+    }
+
+    // First valid regiment in sheet order
+    if (!firstRegiment) {
+      firstRegiment = {
+        name: String(nameValue).trim(),
+        deployedPlanet: String(planetValue).trim(),
+      };
+    }
 
     const key = normalizeKey(planetValue);
+
     acc[key] = acc[key] || [];
 
     const specialtyValue = row[specialtyIdx];
@@ -174,7 +215,9 @@ function buildRegimentMap(sheetRows) {
 
     acc[key].push({
       name: String(nameValue).trim(),
-      specialty: specialtyValue ? String(specialtyValue).trim() : 'Infantry Unit',
+      specialty: specialtyValue
+        ? String(specialtyValue).trim()
+        : 'Infantry Unit',
       fdp: fdpValue,
       warbonds: warbondsValue,
       surplus: surplusValue,
@@ -183,6 +226,11 @@ function buildRegimentMap(sheetRows) {
 
     return acc;
   }, {});
+
+  return {
+    regimentMap,
+    firstRegiment,
+  };
 }
 
 export default function App() {
@@ -209,6 +257,9 @@ export default function App() {
   //googlesheets section
   const [fobMap, setFobMap] = useState({});
   const [regimentMap, setRegimentMap] = useState({});
+
+  const [firstRegiment, setFirstRegiment] = useState(null);
+  const initialSnapDone = useRef(false);
   //googlesheets section ends
 
   const [activeFob, setActiveFob] = useState(null);
@@ -216,58 +267,123 @@ export default function App() {
 
 
 
-  useEffect(() => {
-    let mounted = true;
+useEffect(() => {
+  let mounted = true;
 
-    //googlesheets section
-    getFobSheetData()
-      .then((sheetRows) => {
-        if (!mounted) return;
-        const normalizedRows = sheetRows.map((row) =>
-          row.map((cell) => (typeof cell === 'string' ? cell.trim() : cell))
-        );
-        setFobMap(buildFobMap(normalizedRows));
-      })
-      .catch(setError)
-      .finally(() => setLoading(false));
+  getFobSheetData()
+    .then((sheetRows) => {
+      if (!mounted) return;
 
-    getRegimentSheetData()
-      .then((sheetRows) => {
-        if (!mounted) return;
-        const normalizedRows = sheetRows.map((row) =>
-          row.map((cell) => (typeof cell === 'string' ? cell.trim() : cell))
-        );
-        setRegimentMap(buildRegimentMap(normalizedRows));
-      })
-      .catch(setError)
-      .finally(() => setLoading(false));
-    //googlesheets section ends
+      const normalizedRows = sheetRows.map((row) =>
+        row.map((cell) =>
+          typeof cell === 'string' ? cell.trim() : cell
+        )
+      );
 
-    fetchGalacticMap()
-      .then((data) => {
-        if (!mounted) return;
-        if (data.planets && data.planets.length) setPlanets(data.planets);
-        if (data.connections) setConnections(data.connections);
-        if (data.sectors) setSectors(data.sectors);
-        if (data.planets && data.planets.length) {
-          setSelectedPlanet(data.planets[0]);
-          setActiveFob(null);
-        }
-        setError(null);
-      })
-      .catch((err) => {
-        if (!mounted) return;
-        setError(err.message || String(err));
-      })
-      .finally(() => {
-        if (!mounted) return;
-        setLoading(false);
-      });
+      setFobMap(buildFobMap(normalizedRows));
+    })
+    .catch(setError)
+    .finally(() => setLoading(false));
 
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  getRegimentSheetData()
+    .then((sheetRows) => {
+      if (!mounted) return;
+
+      const normalizedRows = sheetRows.map((row) =>
+        row.map((cell) =>
+          typeof cell === 'string' ? cell.trim() : cell
+        )
+      );
+
+      const {
+        regimentMap: newRegimentMap,
+        firstRegiment: newFirstRegiment,
+      } = buildRegimentMap(normalizedRows);
+
+      setRegimentMap(newRegimentMap);
+      setFirstRegiment(newFirstRegiment);
+    })
+    .catch(setError)
+    .finally(() => setLoading(false));
+
+  fetchGalacticMap()
+    .then((data) => {
+      if (!mounted) return;
+
+      if (data.planets && data.planets.length) {
+        setPlanets(data.planets);
+      }
+
+      if (data.connections) {
+        setConnections(data.connections);
+      }
+
+      if (data.sectors) {
+        setSectors(data.sectors);
+      }
+
+      if (data.planets && data.planets.length) {
+        setSelectedPlanet(data.planets[0]);
+        setActiveFob(null);
+      }
+
+      setError(null);
+    })
+    .catch((err) => {
+      if (!mounted) return;
+      setError(err.message || String(err));
+    })
+    .finally(() => {
+      if (!mounted) return;
+      setLoading(false);
+    });
+
+  return () => {
+    mounted = false;
+  };
+}, []);
+
+useEffect(() => {
+  if (initialSnapDone.current) return;
+  if (!firstRegiment) return;
+  if (!planets.length) return;
+  if (!mapContainerRef.current) return;
+
+  const targetKey = normalizeKey(firstRegiment.deployedPlanet);
+
+  const targetPlanet = planets.find(
+    (planet) =>
+      normalizeKey(planet.name) === targetKey ||
+      normalizeKey(planet.id) === targetKey
+  );
+
+  if (!targetPlanet) {
+    console.warn(
+      'Could not find planet for first regiment:',
+      firstRegiment.name,
+      firstRegiment.deployedPlanet
+    );
+    return;
+  }
+
+  console.log(
+    'Initial map location:',
+    firstRegiment.name,
+    '→',
+    targetPlanet.name
+  );
+
+  initialSnapDone.current = true;
+
+  const initialZoom = 6;
+
+  setSelectedPlanet(targetPlanet);
+  setZoom(initialZoom);
+
+  requestAnimationFrame(() => {
+    centerOnPlanet(targetPlanet, initialZoom);
+  });
+}, [firstRegiment, planets]);
 
   const handleMouseDown = (e) => {
     dragging.current = true;
@@ -284,8 +400,8 @@ export default function App() {
 
   const stopDragging = () => (dragging.current = false);
 
-  const zoomIn = () => setZoom((z) => Math.min(z + 0.25, 4));
-  const zoomOut = () => setZoom((z) => Math.max(z - 0.25, 0.25));
+  const zoomIn = () => setZoom((z) => Math.min(z + 0.25, 6));
+  const zoomOut = () => setZoom((z) => Math.max(z - 0.25, 1));
 
   const handleWheel = (e) => {
     e.preventDefault();
@@ -293,15 +409,16 @@ export default function App() {
     else zoomIn();
   };
 
-  const centerOnPlanet = (planet) => {
+  const centerOnPlanet = (planet, targetZoom = zoom) => {
     const container = mapContainerRef.current;
     if (!container) return;
 
     const rect = container.getBoundingClientRect();
     const displayY = 960 - planet.y;
+
     setOffset({
-      x: rect.width / 2 - (planet.x - 480) * zoom - 480,
-      y: rect.height / 2 - (displayY - 480) * zoom - 480,
+      x: rect.width / 2 - (planet.x - 480) * targetZoom - 480,
+      y: rect.height / 2 - (displayY - 480) * targetZoom - 480,
     });
   };
 
@@ -328,7 +445,13 @@ export default function App() {
     setSelectedPlanet(match);
     setActiveFob(null);
     setActiveRegiment(null);
-    centerOnPlanet(match);
+
+    const searchZoom = 6;
+    setZoom(searchZoom);
+
+    requestAnimationFrame(() => {
+      centerOnPlanet(match, searchZoom);
+    });
   };
 
   const getFobsForPlanet = (planet) => {
@@ -428,6 +551,10 @@ export default function App() {
       <main className="galaxy">
         <div className="stars" />
 
+        <div className="ad-strip">
+          <AdBanner />
+        </div>
+
         <Map
           containerRef={mapContainerRef}
           planets={planets}
@@ -441,6 +568,7 @@ export default function App() {
           transformStyle={{
             transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
             transformOrigin: '50% 50%',
+            transition: 'transform 0.8s cubic-bezier(0.22, 1, 0.36, 1)',
           }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
