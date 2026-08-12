@@ -155,8 +155,8 @@ function buildRegimentMap(sheetRows) {
 
   const headers = hasHeaders
     ? firstRow.map((h) =>
-        typeof h === 'string' ? h.toLowerCase() : ''
-      )
+      typeof h === 'string' ? h.toLowerCase() : ''
+    )
     : [];
 
   const findHeader = (re) =>
@@ -267,123 +267,134 @@ export default function App() {
 
 
 
-useEffect(() => {
-  let mounted = true;
+  useEffect(() => {
+    let mounted = true;
 
-  getFobSheetData()
-    .then((sheetRows) => {
-      if (!mounted) return;
+    fetchGalacticMap()
+      .then((data) => {
+        if (!mounted) return;
 
-      const normalizedRows = sheetRows.map((row) =>
-        row.map((cell) =>
-          typeof cell === 'string' ? cell.trim() : cell
-        )
-      );
+        if (data.planets && data.planets.length) {
+          setPlanets(data.planets);
+        }
 
-      setFobMap(buildFobMap(normalizedRows));
-    })
-    .catch(setError)
-    .finally(() => setLoading(false));
+        if (data.connections) {
+          setConnections(data.connections);
+        }
 
-  getRegimentSheetData()
-    .then((sheetRows) => {
-      if (!mounted) return;
+        if (data.sectors) {
+          setSectors(data.sectors);
+        }
 
-      const normalizedRows = sheetRows.map((row) =>
-        row.map((cell) =>
-          typeof cell === 'string' ? cell.trim() : cell
-        )
-      );
+        if (data.planets && data.planets.length) {
+          setSelectedPlanet(data.planets[0]);
+          setActiveFob(null);
+        }
 
-      const {
-        regimentMap: newRegimentMap,
-        firstRegiment: newFirstRegiment,
-      } = buildRegimentMap(normalizedRows);
+        setError(null);
+      })
+      .catch((err) => {
+        if (!mounted) return;
+        setError(err.message || String(err));
+      })
+      .finally(() => {
+        if (!mounted) return;
+        setLoading(false);
+      });
 
-      setRegimentMap(newRegimentMap);
-      setFirstRegiment(newFirstRegiment);
-    })
-    .catch(setError)
-    .finally(() => setLoading(false));
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
-  fetchGalacticMap()
-    .then((data) => {
-      if (!mounted) return;
+  useEffect(() => {
+    if (initialSnapDone.current) return;
+    if (!firstRegiment) return;
+    if (!planets.length) return;
+    if (!mapContainerRef.current) return;
 
-      if (data.planets && data.planets.length) {
-        setPlanets(data.planets);
-      }
+    const targetKey = normalizeKey(firstRegiment.deployedPlanet);
 
-      if (data.connections) {
-        setConnections(data.connections);
-      }
-
-      if (data.sectors) {
-        setSectors(data.sectors);
-      }
-
-      if (data.planets && data.planets.length) {
-        setSelectedPlanet(data.planets[0]);
-        setActiveFob(null);
-      }
-
-      setError(null);
-    })
-    .catch((err) => {
-      if (!mounted) return;
-      setError(err.message || String(err));
-    })
-    .finally(() => {
-      if (!mounted) return;
-      setLoading(false);
-    });
-
-  return () => {
-    mounted = false;
-  };
-}, []);
-
-useEffect(() => {
-  if (initialSnapDone.current) return;
-  if (!firstRegiment) return;
-  if (!planets.length) return;
-  if (!mapContainerRef.current) return;
-
-  const targetKey = normalizeKey(firstRegiment.deployedPlanet);
-
-  const targetPlanet = planets.find(
-    (planet) =>
-      normalizeKey(planet.name) === targetKey ||
-      normalizeKey(planet.id) === targetKey
-  );
-
-  if (!targetPlanet) {
-    console.warn(
-      'Could not find planet for first regiment:',
-      firstRegiment.name,
-      firstRegiment.deployedPlanet
+    const targetPlanet = planets.find(
+      (planet) =>
+        normalizeKey(planet.name) === targetKey ||
+        normalizeKey(planet.id) === targetKey
     );
-    return;
+
+    if (!targetPlanet) {
+      console.warn(
+        'Could not find planet for first regiment:',
+        firstRegiment.name,
+        firstRegiment.deployedPlanet
+      );
+      return;
+    }
+
+    console.log(
+      'Initial map location:',
+      firstRegiment.name,
+      '→',
+      targetPlanet.name
+    );
+
+    initialSnapDone.current = true;
+
+    const initialZoom = 6;
+
+    setSelectedPlanet(targetPlanet);
+    setZoom(initialZoom);
+
+    requestAnimationFrame(() => {
+      centerOnPlanet(targetPlanet, initialZoom);
+    });
+  }, [firstRegiment, planets]);
+
+  const refreshPersonnelData = async () => {
+  try {
+
+    const fobRows = await getFobSheetData();
+
+    const normalizedFobRows = fobRows.map((row) =>
+      row.map((cell) =>
+        typeof cell === 'string' ? cell.trim() : cell
+      )
+    );
+
+    setFobMap(buildFobMap(normalizedFobRows));
+
+    const regimentRows = await getRegimentSheetData();
+
+    const normalizedRegimentRows = regimentRows.map((row) =>
+      row.map((cell) =>
+        typeof cell === 'string' ? cell.trim() : cell
+      )
+    );
+
+    const {
+      regimentMap: newRegimentMap,
+      firstRegiment: newFirstRegiment,
+    } = buildRegimentMap(normalizedRegimentRows);
+
+    setRegimentMap(newRegimentMap);
+    setFirstRegiment(newFirstRegiment);
+
+  } catch (err) {
+    console.error('FOB/Regiment refresh failed:', err);
+    setError(err.message || String(err));
   }
+};
 
-  console.log(
-    'Initial map location:',
-    firstRegiment.name,
-    '→',
-    targetPlanet.name
-  );
+useEffect(() => {
+  // Load immediately when the site opens
+  refreshPersonnelData();
 
-  initialSnapDone.current = true;
+  // Then refresh every 15 minutes
+  const interval = setInterval(() => {
+    refreshPersonnelData();
+  }, 15 * 60 * 1000);
 
-  const initialZoom = 6;
-
-  setSelectedPlanet(targetPlanet);
-  setZoom(initialZoom);
-
-  requestAnimationFrame(() => {
-    centerOnPlanet(targetPlanet, initialZoom);
-  });
-}, [firstRegiment, planets]);
+  return () => clearInterval(interval);
+}, []);
 
   const handleMouseDown = (e) => {
     dragging.current = true;
@@ -409,27 +420,27 @@ useEffect(() => {
     else zoomIn();
   };
 
-const centerOnPlanet = (planet, targetZoom = zoom) => {
-  const container = mapContainerRef.current;
-  if (!container || !planet) return;
+  const centerOnPlanet = (planet, targetZoom = zoom) => {
+    const container = mapContainerRef.current;
+    if (!container || !planet) return;
 
-  const rect = container.getBoundingClientRect();
+    const rect = container.getBoundingClientRect();
 
-  const svgScale = Math.min(
-    rect.width / 960,
-    rect.height / 960
-  );
+    const svgScale = Math.min(
+      rect.width / 960,
+      rect.height / 960
+    );
 
-  const displayY = 960 - planet.y;
+    const displayY = 960 - planet.y;
 
-  const planetOffsetX = (planet.x - 480) * svgScale;
-  const planetOffsetY = (displayY - 480) * svgScale;
+    const planetOffsetX = (planet.x - 480) * svgScale;
+    const planetOffsetY = (displayY - 480) * svgScale;
 
-  setOffset({
-    x: -planetOffsetX * targetZoom,
-    y: -planetOffsetY * targetZoom,
-  });
-};
+    setOffset({
+      x: -planetOffsetX * targetZoom,
+      y: -planetOffsetY * targetZoom,
+    });
+  };
 
   const handleSearchSubmit = (event) => {
     event.preventDefault();
