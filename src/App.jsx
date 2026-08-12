@@ -240,7 +240,7 @@ export default function App() {
   const [connections, setConnections] = useState(fallbackConnections);
   const [sectors, setSectors] = useState(fallbackSectors);
 
-  const [selectedPlanet, setSelectedPlanet] = useState(fallbackPlanets[0]);
+  const [selectedPlanet, setSelectedPlanet] = useState(fallbackPlanets[0] ?? null);
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
 
@@ -350,51 +350,67 @@ export default function App() {
   }, [firstRegiment, planets]);
 
   const refreshPersonnelData = async () => {
-  try {
+    try {
 
-    const fobRows = await getFobSheetData();
+      const fobRows = await getFobSheetData();
 
-    const normalizedFobRows = fobRows.map((row) =>
-      row.map((cell) =>
-        typeof cell === 'string' ? cell.trim() : cell
-      )
-    );
+      const normalizedFobRows = fobRows.map((row) =>
+        row.map((cell) =>
+          typeof cell === 'string' ? cell.trim() : cell
+        )
+      );
 
-    setFobMap(buildFobMap(normalizedFobRows));
+      setFobMap(buildFobMap(normalizedFobRows));
 
-    const regimentRows = await getRegimentSheetData();
+      const regimentRows = await getRegimentSheetData();
 
-    const normalizedRegimentRows = regimentRows.map((row) =>
-      row.map((cell) =>
-        typeof cell === 'string' ? cell.trim() : cell
-      )
-    );
+      const normalizedRegimentRows = regimentRows.map((row) =>
+        row.map((cell) =>
+          typeof cell === 'string' ? cell.trim() : cell
+        )
+      );
 
-    const {
-      regimentMap: newRegimentMap,
-      firstRegiment: newFirstRegiment,
-    } = buildRegimentMap(normalizedRegimentRows);
+      const {
+        regimentMap: newRegimentMap,
+        firstRegiment: newFirstRegiment,
+      } = buildRegimentMap(normalizedRegimentRows);
 
-    setRegimentMap(newRegimentMap);
-    setFirstRegiment(newFirstRegiment);
+      setRegimentMap(newRegimentMap);
+      setFirstRegiment(newFirstRegiment);
 
-  } catch (err) {
-    console.error('FOB/Regiment refresh failed:', err);
-    setError(err.message || String(err));
-  }
-};
+    } catch (err) {
+      console.error('FOB/Regiment refresh failed:', err);
+      setError(err.message || String(err));
+    }
+  };
 
-useEffect(() => {
-  // Load immediately when the site opens
-  refreshPersonnelData();
-
-  // Then refresh every 15 minutes
-  const interval = setInterval(() => {
+  useEffect(() => {
+    // Load immediately when the site opens
     refreshPersonnelData();
-  }, 15 * 60 * 1000);
 
-  return () => clearInterval(interval);
-}, []);
+    // Then refresh every 15 minutes
+    const interval = setInterval(() => {
+      refreshPersonnelData();
+    }, 15 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key !== 'Escape') return;
+
+      setSelectedPlanet(null);
+      setActiveFob(null);
+      setActiveRegiment(null);
+    };
+
+    window.addEventListener('keydown', handleEscape);
+
+    return () => {
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, []);
 
   const handleMouseDown = (e) => {
     dragging.current = true;
@@ -644,156 +660,170 @@ useEffect(() => {
             <span className="legend-dot illuminate" /> Illuminate
           </div>
         </div>
-
-        <section className="planet-panel">
-          <div className="panel-header">
-            <Globe size={20} />
-            <span>SELECTED PLANET</span>
-          </div>
-
-          <h1>{selectedPlanet?.name ?? '—'}</h1>
-
-          <div className="faction">
-            <span className={`faction-dot ${selectedPlanet?.faction ?? ''}`} />
-
-            <div>
-              <div className="faction-name">
-                {selectedPlanet?.faction === 'super-earth'
-                  ? 'SUPER EARTH'
-                  : selectedPlanet?.faction === 'automatons'
-                    ? 'AUTOMATON'
-                    : selectedPlanet?.faction === 'terminids'
-                      ? 'TERMINID'
-                      : selectedPlanet?.faction === 'illuminate'
-                        ? 'ILLUMINATE'
-                        : 'NEUTRAL'}
-              </div>
-              <div className="planet-meta">Sector: {selectedPlanet?.sector ?? '—'}</div>
+        {selectedPlanet && (
+          <section className="planet-panel">
+            <div className="panel-header">
+              <Globe size={20} />
+              <span>SELECTED PLANET</span>
             </div>
-          </div>
 
-          {selectedPlanetFobs?.length > 0 && (
-            <div className="associated-block">
-              <div className="status-label">FORWARD OPERATING BASES</div>
-              <div className="status-value">
-                {selectedPlanetFobs.map((fob, index) => (
-                  <button
-                    key={`${fob.name || fob}-${index}`}
-                    className="fob-button"
-                    onClick={() => setActiveFob(activeFob === fob ? null : fob)}
-                    type="button"
-                  >
-                    <div className="fob-button-top">{fob.name || fob}</div>
-                  </button>
-                ))}
-              </div>
+            <h1>{selectedPlanet?.name ?? '—'}</h1>
 
-              {activeFob && (
-                <div className="fob-details">
-                  <div className="fob-details-header">
-                    <strong>{activeFob.name}</strong>
-                    <button className="close" onClick={() => setActiveFob(null)}>×</button>
-                  </div>
-                  <div className="fob-row">
-                    <div className="status-label">Warbonds</div>
-                    <div className="status-value">
-                      {activeFob.warbonds && activeFob.warbonds.length > 0 ? (
-                        activeFob.warbonds.map((wb, i) => (
-                          <span key={`${wb}-${i}`} className="warbond-tag">{wb}</span>
-                        ))
-                      ) : (
-                        '—'
-                      )}
-                    </div>
-                  </div>
-                  <div className="fob-row"><span className="status-label">Health</span><span className="status-value">{formatHealth(activeFob.health)}</span></div>
-                  <div className="fob-row"><span className="status-label">Supplies</span><span className="status-value">{(activeFob.supplies === undefined || activeFob.supplies === null || activeFob.supplies === '') ? '—' : String(activeFob.supplies)}</span></div>
+            <div className="faction">
+              <span className={`faction-dot ${selectedPlanet?.faction ?? ''}`} />
+
+              <div>
+                <div className="faction-name">
+                  {selectedPlanet?.faction === 'super-earth'
+                    ? 'SUPER EARTH'
+                    : selectedPlanet?.faction === 'automatons'
+                      ? 'AUTOMATON'
+                      : selectedPlanet?.faction === 'terminids'
+                        ? 'TERMINID'
+                        : selectedPlanet?.faction === 'illuminate'
+                          ? 'ILLUMINATE'
+                          : 'NEUTRAL'}
                 </div>
-              )}
+                <div className="planet-meta">Sector: {selectedPlanet?.sector ?? '—'}</div>
+              </div>
             </div>
-          )}
 
-          {selectedPlanetRegiments?.length > 0 && (
-            <div className="associated-block">
-              <div className="status-label">DEPLOYED REGIMENTS</div>
-              <div className="regiment-grid">
-                {selectedPlanetRegiments.map((regiment, index) => {
-                  const isActive = activeRegiment === regiment;
-                  return (
+            {selectedPlanetFobs?.length > 0 && (
+              <div className="associated-block">
+                <div className="status-label">FORWARD OPERATING BASES</div>
+                <div className="status-value">
+                  {selectedPlanetFobs.map((fob, index) => (
                     <button
-                      key={`${regiment.name || 'regiment'}-${index}`}
-                      className={`regiment-button ${isActive ? 'active' : ''}`}
+                      key={`${fob.name || fob}-${index}`}
+                      className="fob-button"
+                      onClick={() => {
+                        if (activeFob === fob) {
+                          setActiveFob(null);
+                        } else {
+                          setActiveFob(fob);
+                          setActiveRegiment(null);
+                        }
+                      }}
                       type="button"
-                      onClick={() => setActiveRegiment(isActive ? null : regiment)}
-                      title={regiment.name}
                     >
-                      <img
-                        src={getRegimentIcon(regiment.specialty)}
-                        alt={regiment.specialty || 'Regiment'}
-                        width="22"
-                        height="22"
-                      />
+                      <div className="fob-button-top">{fob.name || fob}</div>
                     </button>
-                  );
-                })}
+                  ))}
+                </div>
+
+                {activeFob && (
+                  <div className="fob-details">
+                    <div className="fob-details-header">
+                      <strong>{activeFob.name}</strong>
+                      <button className="close" onClick={() => setActiveFob(null)}>×</button>
+                    </div>
+                    <div className="fob-row">
+                      <div className="status-label">Warbonds</div>
+                      <div className="status-value">
+                        {activeFob.warbonds && activeFob.warbonds.length > 0 ? (
+                          activeFob.warbonds.map((wb, i) => (
+                            <span key={`${wb}-${i}`} className="warbond-tag">{wb}</span>
+                          ))
+                        ) : (
+                          '—'
+                        )}
+                      </div>
+                    </div>
+                    <div className="fob-row"><span className="status-label">Health</span><span className="status-value">{formatHealth(activeFob.health)}</span></div>
+                    <div className="fob-row"><span className="status-label">Supplies</span><span className="status-value">{(activeFob.supplies === undefined || activeFob.supplies === null || activeFob.supplies === '') ? '—' : String(activeFob.supplies)}</span></div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {selectedPlanetRegiments?.length > 0 && (
+              <div className="associated-block">
+                <div className="status-label">DEPLOYED REGIMENTS</div>
+                <div className="regiment-grid">
+                  {selectedPlanetRegiments.map((regiment, index) => {
+                    const isActive = activeRegiment === regiment;
+                    return (
+                      <button
+                        key={`${regiment.name || 'regiment'}-${index}`}
+                        className={`regiment-button ${isActive ? 'active' : ''}`}
+                        type="button"
+                        onClick={() => {
+                          if (isActive) {
+                            setActiveRegiment(null);
+                          } else {
+                            setActiveRegiment(regiment);
+                            setActiveFob(null);
+                          }
+                        }}
+                        title={regiment.name}
+                      >
+                        <img
+                          src={getRegimentIcon(regiment.specialty)}
+                          alt={regiment.specialty || 'Regiment'}
+                          width="22"
+                          height="22"
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {activeRegiment && (
+                  <div className="fob-details regiment-details">
+                    <div className="fob-details-header">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <img
+                          src={getRegimentIcon(activeRegiment.specialty)}
+                          alt={activeRegiment.specialty || 'Regiment'}
+                          width="18"
+                          height="18"
+                        />
+                        <strong>{activeRegiment.name}</strong>
+                      </div>
+                      <button className="close" onClick={() => setActiveRegiment(null)}>×</button>
+                    </div>
+
+                    <div className="fob-row"><span className="status-label">Specialty</span><span className="status-value">{activeRegiment.specialty || '—'}</span></div>
+                    <div className="fob-row"><span className="status-label">FDP</span><span className="status-value">{formatValue(activeRegiment.fdp)}</span></div>
+                    {activeRegiment.surplus !== undefined && activeRegiment.surplus !== null && activeRegiment.surplus !== '' && (
+                      <div className="fob-row"><span className="status-label">Surplus</span><span className="status-value">{formatValue(activeRegiment.surplus)}</span></div>
+                    )}
+                    <div className="fob-row">
+                      <div className="status-label">Warbonds</div>
+                      <div className="status-value">
+                        {activeRegiment.warbonds && activeRegiment.warbonds.length > 0 ? (
+                          activeRegiment.warbonds.map((wb, i) => (
+                            <span key={`${wb}-${i}`} className="warbond-tag">{wb}</span>
+                          ))
+                        ) : (
+                          '—'
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {selectedPlanet?.event && (
+              <div className="event-block">
+                <div className="status-label">LIVE EVENT</div>
+                <div className="status-value">{selectedPlanet.event}</div>
+              </div>
+            )}
+
+            <div className="liberation">
+              <div className="liberation-label">
+                <span>LIBERATION</span>
+                <strong>{Math.round(selectedPlanet?.liberation || 0)}%</strong>
               </div>
 
-              {activeRegiment && (
-                <div className="fob-details regiment-details">
-                  <div className="fob-details-header">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <img
-                        src={getRegimentIcon(activeRegiment.specialty)}
-                        alt={activeRegiment.specialty || 'Regiment'}
-                        width="18"
-                        height="18"
-                      />
-                      <strong>{activeRegiment.name}</strong>
-                    </div>
-                    <button className="close" onClick={() => setActiveRegiment(null)}>×</button>
-                  </div>
-
-                  <div className="fob-row"><span className="status-label">Specialty</span><span className="status-value">{activeRegiment.specialty || '—'}</span></div>
-                  <div className="fob-row"><span className="status-label">FDP</span><span className="status-value">{formatValue(activeRegiment.fdp)}</span></div>
-                  {activeRegiment.surplus !== undefined && activeRegiment.surplus !== null && activeRegiment.surplus !== '' && (
-                    <div className="fob-row"><span className="status-label">Surplus</span><span className="status-value">{formatValue(activeRegiment.surplus)}</span></div>
-                  )}
-                  <div className="fob-row">
-                    <div className="status-label">Warbonds</div>
-                    <div className="status-value">
-                      {activeRegiment.warbonds && activeRegiment.warbonds.length > 0 ? (
-                        activeRegiment.warbonds.map((wb, i) => (
-                          <span key={`${wb}-${i}`} className="warbond-tag">{wb}</span>
-                        ))
-                      ) : (
-                        '—'
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {selectedPlanet?.event && (
-            <div className="event-block">
-              <div className="status-label">LIVE EVENT</div>
-              <div className="status-value">{selectedPlanet.event}</div>
-            </div>
-          )}
-
-          <div className="liberation">
-            <div className="liberation-label">
-              <span>LIBERATION</span>
-              <strong>{Math.round(selectedPlanet?.liberation || 0)}%</strong>
+              <div className="progress">
+                <div style={{ width: `${selectedPlanet?.liberation || 0}%` }} />
+              </div>
             </div>
 
-            <div className="progress">
-              <div style={{ width: `${selectedPlanet?.liberation || 0}%` }} />
-            </div>
-          </div>
-
-          {/* <div className="status-block">
+            {/* <div className="status-block">
             <div className="status-label">STATUS</div>
             <div className="status-value">{selectedPlanet?.status ?? 'Unknown'}</div>
           </div>
@@ -802,7 +832,8 @@ useEffect(() => {
             <div className="status-label">CAMPAIGN</div>
             <div className="campaign-value">Operation: Ironfall</div>
           </div> */}
-        </section>
+          </section>
+        )}
       </main>
     </div>
   );
