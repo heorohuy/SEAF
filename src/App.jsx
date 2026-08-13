@@ -209,9 +209,9 @@ function buildRegimentMap(sheetRows) {
     acc[key] = acc[key] || [];
 
     const specialtyValue = row[specialtyIdx];
-    const fdpValue = parseCellValue(row[fdpIdx]);
+    const fdpValue = parseCellValue(row[3]);//fdpIdx
     const warbondsValue = parseListCell(row[warbondsIdx]);
-    const surplusValue = parseCellValue(row[surplusIdx]);
+    const surplusValue = parseCellValue(row[11]);//surplusIdx
 
     acc[key].push({
       name: String(nameValue).trim(),
@@ -785,9 +785,7 @@ export default function App() {
 
                     <div className="fob-row"><span className="status-label">Specialty</span><span className="status-value">{activeRegiment.specialty || '—'}</span></div>
                     <div className="fob-row"><span className="status-label">FDP</span><span className="status-value">{formatValue(activeRegiment.fdp)}</span></div>
-                    {activeRegiment.surplus !== undefined && activeRegiment.surplus !== null && activeRegiment.surplus !== '' && (
-                      <div className="fob-row"><span className="status-label">Surplus</span><span className="status-value">{formatValue(activeRegiment.surplus)}</span></div>
-                    )}
+                    <div className="fob-row"><span className="status-label">Surplus</span><span className="status-value">{formatValue(activeRegiment.surplus)}</span></div>
                     <div className="fob-row">
                       <div className="status-label">Warbonds</div>
                       <div className="status-value">
