@@ -47,6 +47,27 @@ function getNumericPositionValue(...values) {
   return null;
 }
 
+function hasValidMapPosition(id, x, y) {
+  if (id === 0){
+    return true;
+  }
+
+  if (
+    typeof x !== 'number' ||
+    !Number.isFinite(x) ||
+    typeof y !== 'number' ||
+    !Number.isFinite(y)
+  ) {
+    return false;
+  }
+
+  if (x === 0 && y === 0) {
+    return false;
+  }
+
+  return true;
+}
+
 function getBiomeValue(raw) {
   const candidates = [
     raw?.biome,
@@ -78,16 +99,6 @@ function getBiomeValue(raw) {
 }
 
 function normalizePlanet(raw, info) {
-  /*
-   * WarInfo is the preferred source for map coordinates.
-   *
-   * IMPORTANT:
-   * There is intentionally NO 480/480 fallback anymore.
-   *
-   * 480/480 is Super Earth's map position, so using it
-   * when a planet has no coordinate data causes planets
-   * such as Wayward to appear on top of Super Earth.
-   */
 
   const normalizedRawX = getNumericPositionValue(
     info?.position?.x,
@@ -101,28 +112,50 @@ function normalizePlanet(raw, info) {
     raw?.positionY,
   );
 
-  const x =
-    normalizedRawX !== null
-      ? clamp(
-          (normalizedRawX + 1) * 380 + 100,
-          40,
-          920,
-        )
-      : null;
+  const hasPosition = hasValidMapPosition(
+    raw.index,
+    normalizedRawX,
+    normalizedRawY,
+  );
 
-  const y =
-    normalizedRawY !== null
-      ? clamp(
-          (normalizedRawY + 1) * 380 + 100,
-          40,
-          920,
-        )
-      : null;
+  // const x =
+  //   normalizedRawX !== null
+  //     ? clamp(
+  //         (normalizedRawX + 1) * 380 + 100,
+  //         40,
+  //         920,
+  //       )
+  //     : null;
+
+  // const y =
+  //   normalizedRawY !== null
+  //     ? clamp(
+  //         (normalizedRawY + 1) * 380 + 100,
+  //         40,
+  //         920,
+  //       )
+  //     : null;
+
+  const x = hasPosition
+    ? clamp(
+      (normalizedRawX + 1) * 380 + 100,
+      40,
+      920,
+    )
+    : null;
+
+  const y = hasPosition
+    ? clamp(
+      (normalizedRawY + 1) * 380 + 100,
+      40,
+      920,
+    )
+    : null;
 
   const liberation = raw.maxHealth
     ? Math.round(
-        (raw.health / raw.maxHealth) * 100,
-      )
+      (raw.health / raw.maxHealth) * 100,
+    )
     : 0;
 
   const owner =
@@ -172,13 +205,6 @@ function normalizePlanet(raw, info) {
 
     biome: getBiomeValue(raw),
 
-    /*
-     * Keep the original API object.
-     *
-     * This makes the Planet Database useful for
-     * investigating API fields that we haven't
-     * explicitly normalized yet.
-     */
     raw,
   };
 }
@@ -426,10 +452,10 @@ function buildSectors(planets) {
     const cell = rawCell.length
       ? rawCell
       : createHexagon(
-          site.x,
-          site.y,
-          60,
-        );
+        site.x,
+        site.y,
+        60,
+      );
 
     const centroid =
       getCentroid(cell);
@@ -467,8 +493,8 @@ export async function fetchGalacticMap() {
 
   const warInfo = warId
     ? await fetchJson(
-        `/raw/api/WarSeason/${warId}/WarInfo`,
-      )
+      `/raw/api/WarSeason/${warId}/WarInfo`,
+    )
     : null;
 
   const planetInfos =
@@ -491,13 +517,13 @@ export async function fetchGalacticMap() {
   const planets =
     Array.isArray(rawPlanets)
       ? rawPlanets.map((raw) =>
-          normalizePlanet(
-            raw,
-            planetInfoByIndex.get(
-              String(raw.index),
-            ),
+        normalizePlanet(
+          raw,
+          planetInfoByIndex.get(
+            String(raw.index),
           ),
-        )
+        ),
+      )
       : [];
 
   const planetsByIndex =
@@ -519,18 +545,18 @@ export async function fetchGalacticMap() {
 
   const warInfoPayload = warInfo
     ? {
-        warId:
-          warInfo.warId,
+      warId:
+        warInfo.warId,
 
-        startDate:
-          warInfo.startDate,
+      startDate:
+        warInfo.startDate,
 
-        endDate:
-          warInfo.endDate,
+      endDate:
+        warInfo.endDate,
 
-        layoutVersion:
-          warInfo.layoutVersion,
-      }
+      layoutVersion:
+        warInfo.layoutVersion,
+    }
     : null;
 
   return {
