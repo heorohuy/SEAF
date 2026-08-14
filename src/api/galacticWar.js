@@ -29,29 +29,157 @@ function resolveFaction(owner) {
   return 'neutral';
 }
 
-function normalizePlanet(raw, info) {
-  const x = typeof info?.position?.x === 'number' ? clamp((info.position.x + 1) * 380 + 100, 40, 920) : 480;
-  const y = typeof info?.position?.y === 'number' ? clamp((info.position.y + 1) * 380 + 100, 40, 920) : 480;
+function getNumericPositionValue(...values) {
+  for (const value of values) {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
 
-  const liberation = raw.maxHealth ? Math.round((raw.health / raw.maxHealth) * 100) : 0;
-  const owner = raw.currentOwner || raw.initialOwner || raw.owner || 'Neutral';
+    if (typeof value === 'string' && value.trim() !== '') {
+      const parsed = Number(value);
+
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+  }
+
+  return null;
+}
+
+function getBiomeValue(raw) {
+  const candidates = [
+    raw?.biome,
+    raw?.biomeType,
+    raw?.environment,
+    raw?.environmentType,
+  ];
+
+  for (const value of candidates) {
+    if (
+      value !== undefined &&
+      value !== null &&
+      value !== ''
+    ) {
+      if (typeof value === 'object') {
+        return (
+          value.name ??
+          value.type ??
+          value.id ??
+          JSON.stringify(value)
+        );
+      }
+
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function normalizePlanet(raw, info) {
+  /*
+   * WarInfo is the preferred source for map coordinates.
+   *
+   * IMPORTANT:
+   * There is intentionally NO 480/480 fallback anymore.
+   *
+   * 480/480 is Super Earth's map position, so using it
+   * when a planet has no coordinate data causes planets
+   * such as Wayward to appear on top of Super Earth.
+   */
+
+  const normalizedRawX = getNumericPositionValue(
+    info?.position?.x,
+    raw?.position?.x,
+    raw?.positionX,
+  );
+
+  const normalizedRawY = getNumericPositionValue(
+    info?.position?.y,
+    raw?.position?.y,
+    raw?.positionY,
+  );
+
+  const x =
+    normalizedRawX !== null
+      ? clamp(
+          (normalizedRawX + 1) * 380 + 100,
+          40,
+          920,
+        )
+      : null;
+
+  const y =
+    normalizedRawY !== null
+      ? clamp(
+          (normalizedRawY + 1) * 380 + 100,
+          40,
+          920,
+        )
+      : null;
+
+  const liberation = raw.maxHealth
+    ? Math.round(
+        (raw.health / raw.maxHealth) * 100,
+      )
+    : 0;
+
+  const owner =
+    raw.currentOwner ||
+    raw.initialOwner ||
+    raw.owner ||
+    'Neutral';
 
   const faction = resolveFaction(owner);
 
-  const status = raw.event?.name || owner || 'Unknown';
+  const status =
+    raw.event?.name ||
+    owner ||
+    'Unknown';
 
   return {
-    id: String(raw.index ?? raw.name),
+    id: String(
+      raw.index ??
+      raw.name,
+    ),
+
     index: raw.index,
-    name: raw.name || `Planet ${raw.index}`,
-    sector: raw.sector || 'Unknown',
+
+    name:
+      raw.name ||
+      `Planet ${raw.index}`,
+
+    sector:
+      raw.sector ||
+      'Unknown',
+
     owner,
+
     faction,
+
     liberation,
+
     status,
-    event: raw.event?.name ?? null,
+
+    event:
+      raw.event?.name ??
+      null,
+
     x,
+
     y,
+
+    biome: getBiomeValue(raw),
+
+    /*
+     * Keep the original API object.
+     *
+     * This makes the Planet Database useful for
+     * investigating API fields that we haven't
+     * explicitly normalized yet.
+     */
+    raw,
   };
 }
 
@@ -193,33 +321,93 @@ function buildSectors(planets) {
 
   for (const planet of planets) {
     const key = planet.sector || 'Unknown';
-    const group = groups.get(key) || {
-      name: key.toUpperCase(),
-      planets: [],
-    };
+
+    const group =
+      groups.get(key) || {
+        name: key.toUpperCase(),
+        planets: [],
+      };
 
     group.planets.push(planet);
+
     groups.set(key, group);
   }
 
-  const sectorSites = Array.from(groups.entries()).map(([key, group]) => {
-    const points = group.planets.map((planet) => [planet.x, planet.y]);
-    const centroid = getCentroid(points);
-    return {
-      id: key.toLowerCase().replace(/\s+/g, '-'),
-      name: group.name,
-      faction: getSectorFaction(group.planets),
-      x: centroid.x,
-      y: centroid.y,
-    };
-  });
+  const sectorSites = Array.from(
+    groups.entries(),
+  )
+    .map(([key, group]) => {
+      const positionedPlanets =
+        group.planets.filter(
+          (planet) =>
+            typeof planet.x === 'number' &&
+            typeof planet.y === 'number',
+        );
 
-  const allXs = planets.map((planet) => planet.x);
-  const allYs = planets.map((planet) => planet.y);
-  const minX = Math.min(...allXs) - 80;
-  const maxX = Math.max(...allXs) + 80;
-  const minY = Math.min(...allYs) - 80;
-  const maxY = Math.max(...allYs) + 80;
+      if (positionedPlanets.length === 0) {
+        return null;
+      }
+
+      const points = positionedPlanets.map(
+        (planet) => [
+          planet.x,
+          planet.y,
+        ],
+      );
+
+      const centroid =
+        getCentroid(points);
+
+      return {
+        id: key
+          .toLowerCase()
+          .replace(/\s+/g, '-'),
+
+        name: group.name,
+
+        faction:
+          getSectorFaction(
+            positionedPlanets,
+          ),
+
+        x: centroid.x,
+
+        y: centroid.y,
+      };
+    })
+    .filter(Boolean);
+
+  const positionedPlanets =
+    planets.filter(
+      (planet) =>
+        typeof planet.x === 'number' &&
+        typeof planet.y === 'number',
+    );
+
+  if (positionedPlanets.length === 0) {
+    return [];
+  }
+
+  const allXs = positionedPlanets.map(
+    (planet) => planet.x,
+  );
+
+  const allYs = positionedPlanets.map(
+    (planet) => planet.y,
+  );
+
+  const minX =
+    Math.min(...allXs) - 80;
+
+  const maxX =
+    Math.max(...allXs) + 80;
+
+  const minY =
+    Math.min(...allYs) - 80;
+
+  const maxY =
+    Math.max(...allYs) + 80;
+
   const bounds = [
     [minX, minY],
     [maxX, minY],
@@ -228,54 +416,132 @@ function buildSectors(planets) {
   ];
 
   return sectorSites.map((site) => {
-    const rawCell = buildVoronoiCell(site, sectorSites, bounds);
-    const cell = rawCell.length ? rawCell : createHexagon(site.x, site.y, 60);
-    const centroid = getCentroid(cell);
+    const rawCell =
+      buildVoronoiCell(
+        site,
+        sectorSites,
+        bounds,
+      );
+
+    const cell = rawCell.length
+      ? rawCell
+      : createHexagon(
+          site.x,
+          site.y,
+          60,
+        );
+
+    const centroid =
+      getCentroid(cell);
 
     return {
       id: site.id,
+
       name: site.name,
+
       points: cell,
+
       centerX: centroid.x,
+
       centerY: centroid.y,
+
       faction: site.faction,
     };
   });
 }
 
 export async function fetchGalacticMap() {
-  const [rawPlanets, warIdResponse] = await Promise.all([
+  const [
+    rawPlanets,
+    warIdResponse,
+  ] = await Promise.all([
     fetchJson('/api/v1/planets'),
-    fetchJson('/raw/api/WarSeason/current/WarID'),
+
+    fetchJson(
+      '/raw/api/WarSeason/current/WarID',
+    ),
   ]);
 
-  const warId = warIdResponse?.id;
-  const warInfo = warId ? await fetchJson(`/raw/api/WarSeason/${warId}/WarInfo`) : null;
-  const planetInfos = Array.isArray(warInfo?.planetInfos) ? warInfo.planetInfos : [];
-  const planetInfoByIndex = new Map(planetInfos.map((info) => [String(info.index), info]));
+  const warId =
+    warIdResponse?.id;
 
-  const planets = Array.isArray(rawPlanets)
-    ? rawPlanets.map((raw) => normalizePlanet(raw, planetInfoByIndex.get(String(raw.index))))
-    : [];
+  const warInfo = warId
+    ? await fetchJson(
+        `/raw/api/WarSeason/${warId}/WarInfo`,
+      )
+    : null;
 
-  const planetsByIndex = new Map(planets.map((planet) => [String(planet.index), planet]));
-  const connections = buildConnections(planetsByIndex, planetInfos);
-  const sectors = buildSectors(planets);
+  const planetInfos =
+    Array.isArray(
+      warInfo?.planetInfos,
+    )
+      ? warInfo.planetInfos
+      : [];
+
+  const planetInfoByIndex =
+    new Map(
+      planetInfos.map(
+        (info) => [
+          String(info.index),
+          info,
+        ],
+      ),
+    );
+
+  const planets =
+    Array.isArray(rawPlanets)
+      ? rawPlanets.map((raw) =>
+          normalizePlanet(
+            raw,
+            planetInfoByIndex.get(
+              String(raw.index),
+            ),
+          ),
+        )
+      : [];
+
+  const planetsByIndex =
+    new Map(
+      planets.map((planet) => [
+        String(planet.index),
+        planet,
+      ]),
+    );
+
+  const connections =
+    buildConnections(
+      planetsByIndex,
+      planetInfos,
+    );
+
+  const sectors =
+    buildSectors(planets);
 
   const warInfoPayload = warInfo
     ? {
-        warId: warInfo.warId,
-        startDate: warInfo.startDate,
-        endDate: warInfo.endDate,
-        layoutVersion: warInfo.layoutVersion,
+        warId:
+          warInfo.warId,
+
+        startDate:
+          warInfo.startDate,
+
+        endDate:
+          warInfo.endDate,
+
+        layoutVersion:
+          warInfo.layoutVersion,
       }
     : null;
 
   return {
     planets,
+
     connections,
+
     sectors,
-    warInfo: warInfoPayload,
+
+    warInfo:
+      warInfoPayload,
   };
 }
 
