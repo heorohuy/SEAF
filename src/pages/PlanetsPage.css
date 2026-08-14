@@ -389,12 +389,62 @@
 
 .planet-table {
   width: 100%;
-
-  min-width: 900px;
-
+  min-width: 1100px;
   border-collapse: collapse;
-
+  table-layout: fixed;
   font-size: calc(11px * var(--ui-scale));
+}
+
+.planet-table th,
+.planet-table td {
+  box-sizing: border-box;
+  width: auto;
+  min-width: 0;
+}
+
+/* Same alignment for header + data */
+.planet-table th:nth-child(1),
+.planet-table td:nth-child(1) {
+  width: 7%;
+  text-align: center;
+}
+
+.planet-table th:nth-child(2),
+.planet-table td:nth-child(2) {
+  width: 20%;
+  text-align: left;
+}
+
+.planet-table th:nth-child(3),
+.planet-table td:nth-child(3) {
+  width: 14%;
+  text-align: left;
+}
+
+.planet-table th:nth-child(4),
+.planet-table td:nth-child(4),
+.planet-table th:nth-child(5),
+.planet-table td:nth-child(5) {
+  width: 9%;
+  text-align: right;
+}
+
+.planet-table th:nth-child(6),
+.planet-table td:nth-child(6) {
+  width: 15%;
+  text-align: left;
+}
+
+.planet-table th:nth-child(7),
+.planet-table td:nth-child(7) {
+  width: 15%;
+  text-align: left;
+}
+
+.planet-table th:nth-child(8),
+.planet-table td:nth-child(8) {
+  width: 11%;
+  text-align: left;
 }
 
 .planet-table thead {
