@@ -230,7 +230,6 @@ export default function PlanetsPage() {
           planet.name,
           planet.sector,
           planet.faction,
-          planet.owner,
           getBiomeLabel(planet),
         ];
 
@@ -440,7 +439,6 @@ export default function PlanetsPage() {
                     <th>Y</th>
                     <th>BIOME</th>
                     <th>FACTION</th>
-                    <th>OWNER</th>
                   </tr>
                 </thead>
 
@@ -502,11 +500,6 @@ export default function PlanetsPage() {
                           </span>
                         </td>
 
-                        <td>
-                          {formatValue(
-                            planet.owner,
-                          )}
-                        </td>
                       </tr>
                     ),
                   )}

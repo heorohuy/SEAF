@@ -62,6 +62,24 @@ const galaxyRadius =
       .replace(/[-_–—]+/g, ' ')
       .replace(/\s+/g, ' ');
 
+  const getFdpHealthClass = (fdp) => {
+  const value = Number(fdp);
+
+  if (!Number.isFinite(value)) {
+    return 'health-unknown';
+  }
+
+  if (value < 200) {
+    return 'health-critical';
+  }
+
+  if (value <= 490) {
+    return 'health-warning';
+  }
+
+  return 'health-good';
+};
+
   return (
     <div ref={ref} className="map" onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}>
       <svg className="galaxy-svg" viewBox="0 0 960 960" preserveAspectRatio="xMidYMid meet" style={transformStyle}>

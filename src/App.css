@@ -890,3 +890,23 @@ button {
   color: #f0b429;
   border-left: 2px solid #f0b429;
 }
+
+.regiment-button.health-good {
+  background: rgba(50, 190, 90, 0.35);
+  border-color: rgba(70, 220, 110, 0.65);
+}
+
+.regiment-button.health-warning {
+  background: rgba(240, 145, 35, 0.40);
+  border-color: rgba(255, 165, 50, 0.70);
+}
+
+.regiment-button.health-critical {
+  background: rgba(210, 45, 45, 0.45);
+  border-color: rgba(255, 70, 70, 0.75);
+}
+
+.regiment-button.health-unknown {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.10);
+}

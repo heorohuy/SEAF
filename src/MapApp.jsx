@@ -575,6 +575,24 @@ const centerOnPlanet = (planet, targetZoom = zoom) => {
 
   const formatValue = (v) => (v === undefined || v === null || v === '' ? '—' : String(v));
 
+  const getFdpHealthClass = (fdp) => {
+  const value = Number(fdp);
+
+  if (!Number.isFinite(value)) {
+    return 'health-unknown';
+  }
+
+  if (value < 200) {
+    return 'health-critical';
+  }
+
+  if (value <= 490) {
+    return 'health-warning';
+  }
+
+  return 'health-good';
+};
+
   return (
     <div className="app">
       <header className="top-bar">
@@ -762,7 +780,7 @@ const centerOnPlanet = (planet, targetZoom = zoom) => {
                     return (
                       <button
                         key={`${regiment.name || 'regiment'}-${index}`}
-                        className={`regiment-button ${isActive ? 'active' : ''}`}
+                        className={`regiment-button ${getFdpHealthClass(regiment.fdp)} ${isActive ? 'active' : ''}`}
                         type="button"
                         onClick={() => {
                           if (isActive) {
