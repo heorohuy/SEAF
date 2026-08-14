@@ -438,8 +438,8 @@ export default function App() {
     else zoomIn();
   };
 
-  const centerOnPlanet = (planet, targetZoom = zoom) => {
-    const container = mapContainerRef.current;
+const centerOnPlanet = (planet, targetZoom = zoom) => {
+  const container = mapContainerRef.current;
 
   if (
     !container ||
@@ -451,7 +451,31 @@ export default function App() {
   ) {
     return;
   }
-  };
+
+  const rect = container.getBoundingClientRect();
+
+  // The SVG uses a 960 x 960 viewBox.
+  // Map.jsx flips the Y coordinate with: 960 - y
+  const svgSize = 960;
+  const scale = Math.min(
+    rect.width / svgSize,
+    rect.height / svgSize
+  );
+
+  const flippedY = svgSize - planet.y;
+
+  // Keep the selected planet at the center of the viewport
+  const offsetX =
+    -(planet.x - svgSize / 2) * scale * targetZoom;
+
+  const offsetY =
+    -(flippedY - svgSize / 2) * scale * targetZoom;
+
+  setOffset({
+    x: offsetX,
+    y: offsetY,
+  });
+};
 
   const handleSearchSubmit = (event) => {
     event.preventDefault();
