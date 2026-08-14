@@ -440,24 +440,17 @@ export default function App() {
 
   const centerOnPlanet = (planet, targetZoom = zoom) => {
     const container = mapContainerRef.current;
-    if (!container || !planet) return;
 
-    const rect = container.getBoundingClientRect();
-
-    const svgScale = Math.min(
-      rect.width / 960,
-      rect.height / 960
-    );
-
-    const displayY = 960 - planet.y;
-
-    const planetOffsetX = (planet.x - 480) * svgScale;
-    const planetOffsetY = (displayY - 480) * svgScale;
-
-    setOffset({
-      x: -planetOffsetX * targetZoom,
-      y: -planetOffsetY * targetZoom,
-    });
+  if (
+    !container ||
+    !planet ||
+    typeof planet.x !== 'number' ||
+    typeof planet.y !== 'number' ||
+    !Number.isFinite(planet.x) ||
+    !Number.isFinite(planet.y)
+  ) {
+    return;
+  }
   };
 
   const handleSearchSubmit = (event) => {

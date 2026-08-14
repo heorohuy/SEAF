@@ -6,11 +6,20 @@ import PlanetsPage from './pages/PlanetsPage.jsx';
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<MapApp />} />
+      <Route
+        path="/"
+        element={<MapApp />}
+      />
 
-      <Route path="/planets" element={<PlanetsPage />} />
+      <Route
+        path="/planets"
+        element={<PlanetsPage />}
+      />
 
-      <Route path="*" element={<MapApp />} />
+      <Route
+        path="*"
+        element={<MapApp />}
+      />
     </Routes>
   );
 }

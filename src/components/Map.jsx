@@ -27,15 +27,33 @@ export default function Map({ containerRef, planets, connections, sectors, selec
       : undefined,
     centerY: sector.centerY != null ? flipY(sector.centerY) : sector.centerY,
   }));
-  const flippedPlanets = planets.map((planet) => ({
-    ...planet,
-    y: flipY(planet.y),
-  }));
+const positionedPlanets = planets.filter(
+  (planet) =>
+    typeof planet.x === 'number' &&
+    Number.isFinite(planet.x) &&
+    typeof planet.y === 'number' &&
+    Number.isFinite(planet.y)
+);
 
-  const galaxyRadius = Math.min(
-    470,
-    Math.max(...flippedPlanets.map((planet) => Math.hypot(planet.x - 480, planet.y - 480))) + 20
-  );
+const flippedPlanets = positionedPlanets.map((planet) => ({
+  ...planet,
+  y: flipY(planet.y),
+}));
+
+const galaxyRadius =
+  flippedPlanets.length > 0
+    ? Math.min(
+        470,
+        Math.max(
+          ...flippedPlanets.map((planet) =>
+            Math.hypot(
+              planet.x - 480,
+              planet.y - 480
+            )
+          )
+        ) + 20
+      )
+    : 100;
 
   const normalizeKey = (value) =>
     String(value ?? '')
