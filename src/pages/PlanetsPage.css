@@ -1,3 +1,7 @@
+:root {
+  --ui-scale: 1.4;
+}
+
 .planets-page {
   min-height: 100vh;
 
@@ -60,7 +64,7 @@
 }
 
 .planets-logo span {
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
 
   letter-spacing: 2px;
@@ -69,7 +73,7 @@
 .planets-logo small {
   color: #596771;
 
-  font-size: 7px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 600;
 
   letter-spacing: 1.5px;
@@ -85,7 +89,7 @@
 .planets-status span {
   color: #56636c;
 
-  font-size: 8px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
 
   letter-spacing: 1.5px;
@@ -94,7 +98,7 @@
 .planets-status strong {
   color: #72a86d;
 
-  font-size: 9px;
+  font-size: calc(11px * var(--ui-scale));
 
   letter-spacing: 1.5px;
 }
@@ -125,7 +129,7 @@
 
   color: #697984;
 
-  font-size: 8px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
 
   letter-spacing: 2px;
@@ -166,7 +170,7 @@
 
   color: #f4b942;
 
-  font-size: 34px;
+  font-size: calc(34px * var(--ui-scale));
   line-height: 1;
 }
 
@@ -177,7 +181,7 @@
 
   color: #59656e;
 
-  font-size: 8px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
 
   letter-spacing: 1.5px;
@@ -230,7 +234,7 @@
 
   font-family: inherit;
 
-  font-size: 9px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 600;
 
   letter-spacing: 1px;
@@ -255,7 +259,7 @@
 
   font-family: inherit;
 
-  font-size: 8px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
 
   letter-spacing: 1px;
@@ -284,7 +288,7 @@
 
   font-family: inherit;
 
-  font-size: 8px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
 
   letter-spacing: 1px;
@@ -332,7 +336,7 @@
 
   color: #71808a;
 
-  font-size: 9px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 600;
 
   letter-spacing: 1px;
@@ -361,7 +365,7 @@
 
   font-family: inherit;
 
-  font-size: 8px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
 
   letter-spacing: 1px;
@@ -390,7 +394,7 @@
 
   border-collapse: collapse;
 
-  font-size: 10px;
+  font-size: calc(11px * var(--ui-scale));
 }
 
 .planet-table thead {
@@ -406,7 +410,7 @@
 
   text-align: left;
 
-  font-size: 7px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
 
   letter-spacing: 1.5px;
@@ -484,7 +488,7 @@
 
   color: #859199;
 
-  font-size: 7px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
 
   letter-spacing: 0.7px;
@@ -521,7 +525,7 @@
 
   text-align: center;
 
-  font-size: 9px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
 
   letter-spacing: 1.5px;
@@ -553,7 +557,7 @@
 
   color: #596771;
 
-  font-size: 8px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
 
   letter-spacing: 1px;
@@ -595,7 +599,7 @@
 
   font-family: inherit;
 
-  font-size: 7px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
 
   letter-spacing: 1px;
@@ -627,7 +631,7 @@
 
   font-family: monospace;
 
-  font-size: 10px;
+  font-size: calc(11px * var(--ui-scale));
 
   line-height: 1.55;
 

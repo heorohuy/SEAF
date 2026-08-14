@@ -2,6 +2,10 @@
   box-sizing: border-box;
 }
 
+:root {
+  --ui-scale: 1.4;
+}
+
 html,
 body,
 #root {
@@ -61,7 +65,7 @@ button {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-scale));
   letter-spacing: 1.5px;
   color: #9fa8b9;
 }
@@ -113,7 +117,7 @@ button {
   align-items: center;
   gap: 8px;
   color: #aeb8c1;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-scale));
   letter-spacing: 2px;
   text-transform: uppercase;
   z-index: 5;
@@ -136,13 +140,13 @@ button {
   align-items: center;
   gap: 10px;
   color: #8c99a5;
-  font-size: 10px;
+  font-size: calc(11px * var(--ui-scale));
   letter-spacing: 1.5px;
 }
 
 .planet-panel h1 {
   margin: 16px 0 10px;
-  font-size: 24px;
+  font-size: calc(24px * var(--ui-scale));
   letter-spacing: 1px;
 }
 
@@ -151,19 +155,19 @@ button {
   align-items: center;
   gap: 10px;
   color: #aeb8c1;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-scale));
 }
 
 .faction-name {
   font-weight: 700;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-scale));
   letter-spacing: 1px;
   color: #e8edf2;
 }
 
 .planet-meta,
 .status-label {
-  font-size: 10px;
+  font-size: calc(11px * var(--ui-scale));
   color: #8f9aa5;
 }
 
@@ -206,7 +210,7 @@ button {
   justify-content: space-between;
   margin-bottom: 10px;
   color: #8f9aa5;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-scale));
   letter-spacing: 1px;
 }
 
@@ -285,7 +289,7 @@ button {
 
 .search-error {
   color: #ff8a8a;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-scale));
   letter-spacing: 0.5px;
 }
 
@@ -301,14 +305,14 @@ button {
   border: 1px solid rgba(255, 255, 255, 0.08);
   z-index: 5;
   color: #c5ccd3;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-scale));
   letter-spacing: 0.8px;
 }
 
 .legend-panel span {
   text-transform: uppercase;
   color: #8f9aa5;
-  font-size: 10px;
+  font-size: calc(11px * var(--ui-scale));
 }
 
 .legend-row {
@@ -386,7 +390,7 @@ button {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-scale));
   color: #e8edf2;
 }
 
@@ -442,20 +446,20 @@ button {
 }
 
 .fob-details-header { display:flex; justify-content:space-between; align-items:center; }
-.fob-details .close { background:none; border:0; color:#cfe8ff; font-size:18px; cursor:pointer; }
+.fob-details .close { background:none; border:0; color:#cfe8ff; font-size: calc(18px * var(--ui-scale)); cursor:pointer; }
 .fob-row { display:flex; justify-content:space-between; margin-top:8px; }
-.fob-row .status-label { color:#8f9aa5; font-size:11px; }
+.fob-row .status-label { color:#8f9aa5; font-size: calc(11px * var(--ui-scale)); }
 .fob-row .status-value { color:#cfe8ff; font-weight:700; }
 
 .warbonds { margin-top:6px; display:flex; gap:6px; flex-wrap:wrap; }
-.warbond-tag { background: rgba(97,168,255,0.06); color:#61a8ff; padding:4px 8px; border-radius:999px; font-size:11px; }
+.warbond-tag { background: rgba(97,168,255,0.06); color:#61a8ff; padding:4px 8px; border-radius:999px; font-size: calc(11px * var(--ui-scale)); }
 .fob-button-top { font-weight:700; }
 
 .zoom-controls span {
   min-width: 52px;
   text-align: center;
   color: #8f9aa5;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-scale));
   letter-spacing: 1px;
 }
 
@@ -504,7 +508,7 @@ button {
 
 .sector-label {
   fill: rgba(190, 200, 210, 0.7);
-  font-size: 3px;
+  font-size: calc(3px * var(--ui-scale));
   font-weight: 700;
   letter-spacing: 0.3px;
   text-transform: uppercase;
@@ -541,7 +545,7 @@ button {
 
 .planet-label {
   fill: #e4ecf5;
-  font-size: 3.8px;
+  font-size: calc(3.8px * var(--ui-scale));
   font-weight: 700;
   letter-spacing: 0.05px;
   pointer-events: none;
@@ -591,7 +595,7 @@ button {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-scale));
   font-weight: 800;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -613,7 +617,7 @@ button {
   border: 1px solid rgba(244, 197, 66, 0.35);
   color: #c8d0d8;
 
-  font-size: 10px;
+  font-size: calc(11px * var(--ui-scale));
   line-height: 1.5;
   letter-spacing: 1px;
   white-space: nowrap;
@@ -708,13 +712,13 @@ button {
   align-items: center;
   gap: 8px;
   color: #7f8b96;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-scale));
   letter-spacing: 2px;
 }
 
 .database-heading h1 {
   margin: 8px 0;
-  font-size: 32px;
+  font-size: calc(32px * var(--ui-scale));
   letter-spacing: 4px;
 }
 
@@ -723,7 +727,7 @@ button {
 }
 
 .planet-count {
-  font-size: 32px;
+  font-size: calc(32px * var(--ui-scale));
   color: #f0b429;
   text-align: right;
 }
@@ -731,7 +735,7 @@ button {
 .planet-count span {
   display: block;
   color: #68737d;
-  font-size: 10px;
+  font-size: calc(11px * var(--ui-scale));
   letter-spacing: 2px;
 }
 
@@ -775,7 +779,7 @@ button {
 .planet-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-scale));
 }
 
 .planet-table th {
@@ -784,7 +788,7 @@ button {
   text-align: left;
   padding: 12px;
   letter-spacing: 1px;
-  font-size: 10px;
+  font-size: calc(11px * var(--ui-scale));
 }
 
 .planet-table td {
@@ -847,7 +851,7 @@ button {
 
   color: #f0b429;
   letter-spacing: 2px;
-  font-size: 12px;
+  font-size: calc(11px * var(--ui-scale));
 }
 
 .menu-close {
@@ -872,7 +876,7 @@ button {
   color: #8d99a3;
   text-decoration: none;
 
-  font-size: 12px;
+  font-size: calc(11px * var(--ui-scale));
   letter-spacing: 1.5px;
 }
 
