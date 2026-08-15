@@ -21,7 +21,7 @@ export default async function handler(req, res) {
   try {
     const ships = await getClanFleet(clanId);
 
-    // Cache the result at Vercel's edge for 5 minutes.
+    // Cache for 5 minutes.
     res.setHeader(
       "Cache-Control",
       "s-maxage=300, stale-while-revalidate=600"
@@ -34,31 +34,25 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error("Fleet API error:", error);
 
-    return res.status(502).json({
+    // Return the actual error while we're getting this working.
+    return res.status(500).json({
       error: "Failed to retrieve fleet data",
-      details:
-        process.env.NODE_ENV === "development"
-          ? error.message
-          : undefined,
+      message: error?.message || String(error),
     });
   }
 }
 
 
 /**
- * Get the commissioned fleet from a clan's HD2Clans hangar.
+ * Get commissioned ships from the clan hangar.
  *
- * IMPORTANT:
- * We deliberately only collect links between:
+ * Super Destroyers are excluded by section:
  *
- *     "Clan Fleet Registry"
- *
- * and
- *
- *     "Super Destroyers"
- *
- * This means Super Destroyers are excluded by structure,
- * rather than by checking their name.
+ * Clan Fleet Registry
+ *       ↓
+ *   commissioned ships
+ *       ↓
+ * Super Destroyers
  */
 async function getClanFleet(clanId) {
   const hangarUrl = `${HD2CLANS_BASE}/clan/${clanId}/hangar`;
@@ -66,111 +60,191 @@ async function getClanFleet(clanId) {
   const html = await fetchHtml(hangarUrl);
   const $ = cheerio.load(html);
 
-  const registryHeading = findHeading(
-    $,
-    "Clan Fleet Registry"
-  );
+  // Get every element in document order.
+  const elements = $("body *").toArray();
+
+  const registryHeading = elements.find((element) => {
+    return (
+      /^h[1-6]$/i.test(element.name) &&
+      cleanText($(element).text()).toLowerCase() ===
+        "clan fleet registry"
+    );
+  });
 
   if (!registryHeading) {
     throw new Error(
-      "Could not find Clan Fleet Registry on HD2Clans"
+      "Could not find 'Clan Fleet Registry' heading"
     );
   }
 
-  const shipUrls = [];
+  const superDestroyerHeading = elements.find((element) => {
+    return (
+      /^h[1-6]$/i.test(element.name) &&
+      cleanText($(element).text()).toLowerCase() ===
+        "super destroyers"
+    );
+  });
 
-  /*
-   * Walk through the siblings after the registry heading.
-   *
-   * We stop BEFORE the Super Destroyers heading.
-   */
-  let element = registryHeading.next();
+  if (!superDestroyerHeading) {
+    throw new Error(
+      "Could not find 'Super Destroyers' heading"
+    );
+  }
 
-  while (element.length) {
-    if (
-      isHeading(element, "Super Destroyers")
-    ) {
-      break;
-    }
+  const registryIndex = elements.indexOf(registryHeading);
+  const superDestroyerIndex =
+    elements.indexOf(superDestroyerHeading);
 
-    element
-      .find('a[href*="/hangar/ship/"]')
-      .each((_, link) => {
-        const href = $(link).attr("href");
+  if (registryIndex === -1 || superDestroyerIndex === -1) {
+    throw new Error(
+      "Could not determine fleet section boundaries"
+    );
+  }
 
-        if (!href) {
-          return;
-        }
-
-        const absoluteUrl = new URL(
-          href,
-          HD2CLANS_BASE
-        ).href;
-
-        if (!shipUrls.includes(absoluteUrl)) {
-          shipUrls.push(absoluteUrl);
-        }
-      });
-
-    element = element.next();
+  if (registryIndex >= superDestroyerIndex) {
+    throw new Error(
+      "Fleet section boundaries are in an invalid order"
+    );
   }
 
   /*
-   * Fetch the individual ship pages.
+   * Only look at links between the two headings.
    *
-   * Promise.all is fine here because a normal clan fleet is
-   * only a handful of ships.
+   * This is the important part:
+   *
+   * Super Destroyer links occur AFTER superDestroyerIndex,
+   * so they are never included.
+   */
+  const shipUrls = [];
+
+  elements.forEach((element, index) => {
+    if (
+      index <= registryIndex ||
+      index >= superDestroyerIndex
+    ) {
+      return;
+    }
+
+    if (
+      element.name !== "a" ||
+      !element.attribs?.href
+    ) {
+      return;
+    }
+
+    const href = element.attribs.href;
+
+    if (!href.includes("/hangar/ship/")) {
+      return;
+    }
+
+    const url = new URL(
+      href,
+      HD2CLANS_BASE
+    ).href;
+
+    if (!shipUrls.includes(url)) {
+      shipUrls.push(url);
+    }
+  });
+
+  if (shipUrls.length === 0) {
+    throw new Error(
+      "No commissioned ships found in Clan Fleet Registry"
+    );
+  }
+
+  console.log(
+    `Found ${shipUrls.length} commissioned ships for clan ${clanId}`
+  );
+
+  /*
+   * Fetch each individual ship page.
    */
   const ships = await Promise.all(
     shipUrls.map((url) => getShip(url))
   );
 
-  return ships.filter(Boolean);
+  return ships;
 }
 
 
 /**
- * Extract the useful information from an individual ship page.
+ * Parse an individual ship page.
  */
 async function getShip(url) {
   const html = await fetchHtml(url);
   const $ = cheerio.load(html);
 
   /*
-   * Ship name
+   * Name
    *
-   * The current HD2Clans page has the ship name in the
-   * main H1.
+   * Current HD2Clans structure:
+   *
+   * # FNS Apex Directive
    */
-  const name = $("h1")
-    .first()
-    .text()
-    .replace(/\s+/g, " ")
-    .trim();
+  const name = cleanText($("h1").first().text());
 
   if (!name) {
-    throw new Error(`Could not determine ship name: ${url}`);
+    throw new Error(
+      `Could not find ship name: ${url}`
+    );
   }
 
+
   /*
-   * Ship class
+   * Class
    *
-   * On the current page the class is a link immediately
-   * below the ship name.
+   * Current structure:
+   *
+   * <a>Freedom-Class Light Cruiser</a>
    */
-  const shipClass = extractShipClass($);
+  let shipClass = null;
+
+  $("a").each((_, element) => {
+    if (shipClass) {
+      return;
+    }
+
+    const text = cleanText($(element).text());
+
+    /*
+     * All ship classes on HD2Clans use "-Class".
+     */
+    if (/-Class\s+/i.test(text)) {
+      shipClass = text;
+    }
+  });
+
+  if (!shipClass) {
+    throw new Error(
+      `Could not find ship class for "${name}"`
+    );
+  }
+
 
   /*
    * Location
    *
-   * HD2Clans currently renders:
+   * Current structure:
    *
-   * Location: <planet/location>
+   * Location: Senge 23
    *
-   * We specifically look for the label instead of trying
-   * to infer the location from arbitrary text.
+   * Returns in
    */
-  const location = extractLocation($);
+  const bodyText = cleanText($("body").text());
+
+  const locationMatch = bodyText.match(
+    /Location:\s*(.+?)\s+Returns in/i
+  );
+
+  if (!locationMatch) {
+    throw new Error(
+      `Could not find location for "${name}"`
+    );
+  }
+
+  const location = locationMatch[1].trim();
 
   return {
     name,
@@ -181,71 +255,13 @@ async function getShip(url) {
 
 
 /**
- * Find the ship class from the class link on the ship page.
- */
-function extractShipClass($) {
-  let shipClass = null;
-
-  /*
-   * The current ship page puts the class as a link
-   * immediately after the H1.
-   *
-   * Look through links for the known class naming convention.
-   */
-  $("a").each((_, element) => {
-    if (shipClass) {
-      return;
-    }
-
-    const text = $(element)
-      .text()
-      .replace(/\s+/g, " ")
-      .trim();
-
-    if (
-      text.endsWith("-Class Corvette") ||
-      text.endsWith("-Class Escort Frigate") ||
-      text.endsWith("-Class Light Cruiser") ||
-      text.endsWith("-Class Heavy Cruiser") ||
-      text.endsWith("-Class Destroyer") ||
-      text.endsWith("-Class Battleship") ||
-      text.endsWith("-Class Carrier")
-    ) {
-      shipClass = text;
-    }
-  });
-
-  return shipClass;
-}
-
-
-/**
- * Extract "Location:" from the ship page.
- */
-function extractLocation($) {
-  const bodyText = $("body")
-    .text()
-    .replace(/\s+/g, " ")
-    .trim();
-
-  const match = bodyText.match(
-    /Location:\s*(.+?)(?=\s+Returns in|\s+Drydock Yard|\s+Repair Type|$)/i
-  );
-
-  return match ? match[1].trim() : null;
-}
-
-
-
-/**
- * Fetch HTML from HD2Clans.
+ * Fetch a page from HD2Clans.
  */
 async function fetchHtml(url) {
   const response = await fetch(url, {
     headers: {
-      "User-Agent":
-        "SEAF Fleet Integration/1.0 (+https://seaf-lemon.vercel.app)",
-      Accept: "text/html",
+      "User-Agent": "SEAF-Fleet-Integration/1.0",
+      Accept: "text/html,application/xhtml+xml",
     },
   });
 
@@ -260,45 +276,10 @@ async function fetchHtml(url) {
 
 
 /**
- * Find an H2/H3/etc. heading with the specified text.
+ * Normalize whitespace.
  */
-function findHeading($, text) {
-  let result = null;
-
-  $("h1, h2, h3, h4, h5, h6").each((_, element) => {
-    if (result) {
-      return;
-    }
-
-    const heading = $(element)
-      .text()
-      .replace(/\s+/g, " ")
-      .trim();
-
-    if (heading.toLowerCase() === text.toLowerCase()) {
-      result = $(element);
-    }
-  });
-
-  return result;
-}
-
-
-/**
- * Determine whether an element is a heading with specific text.
- */
-function isHeading(element, text) {
-  const tagName = element[0]?.name;
-
-  if (!tagName || !/^h[1-6]$/i.test(tagName)) {
-    return false;
-  }
-
-  return (
-    element
-      .text()
-      .replace(/\s+/g, " ")
-      .trim()
-      .toLowerCase() === text.toLowerCase()
-  );
+function cleanText(text) {
+  return String(text)
+    .replace(/\s+/g, " ")
+    .trim();
 }
