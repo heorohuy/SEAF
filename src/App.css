@@ -536,6 +536,14 @@ button {
   transition: r 0.15s ease;
 }
 
+.sos-pulse {
+  fill: none;
+  stroke: #ff3030;
+  stroke-width: 1.2;
+  pointer-events: none;
+  vector-effect: non-scaling-stroke;
+}
+
 .planet-circle {
   fill: currentColor;
   stroke: #0b0e12;

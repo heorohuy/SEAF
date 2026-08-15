@@ -11,6 +11,7 @@ import './App.css';
 //googlesheets section
 import { getSheetData as getFobSheetData } from './api/sicarisFOB';
 import { getSheetData as getRegimentSheetData } from './api/sicarisRegiments';
+import { getSheetData as getSOSSheetData } from './api/sicarisSOS';
 //googlesheets section ends
 
 import airIcon from './assets/1986-JJ-SEAFICONS-AIR.png';
@@ -259,6 +260,7 @@ export default function App() {
   //googlesheets section
   const [fobMap, setFobMap] = useState({});
   const [regimentMap, setRegimentMap] = useState({});
+  const [sosLocations, setSosLocations] = useState(new Set());
 
   const [firstRegiment, setFirstRegiment] = useState(null);
   const initialSnapDone = useRef(false);
@@ -351,40 +353,73 @@ export default function App() {
     });
   }, [firstRegiment, planets]);
 
-  const refreshPersonnelData = async () => {
-    try {
+const refreshPersonnelData = async () => {
+  try {
+    const fobRows = await getFobSheetData();
 
-      const fobRows = await getFobSheetData();
+    const normalizedFobRows = fobRows.map((row) =>
+      row.map((cell) =>
+        typeof cell === 'string' ? cell.trim() : cell
+      )
+    );
 
-      const normalizedFobRows = fobRows.map((row) =>
-        row.map((cell) =>
-          typeof cell === 'string' ? cell.trim() : cell
-        )
-      );
+    setFobMap(buildFobMap(normalizedFobRows));
 
-      setFobMap(buildFobMap(normalizedFobRows));
+    const regimentRows = await getRegimentSheetData();
 
-      const regimentRows = await getRegimentSheetData();
+    const normalizedRegimentRows = regimentRows.map((row) =>
+      row.map((cell) =>
+        typeof cell === 'string' ? cell.trim() : cell
+      )
+    );
 
-      const normalizedRegimentRows = regimentRows.map((row) =>
-        row.map((cell) =>
-          typeof cell === 'string' ? cell.trim() : cell
-        )
-      );
+    const {
+      regimentMap: newRegimentMap,
+      firstRegiment: newFirstRegiment,
+    } = buildRegimentMap(normalizedRegimentRows);
 
-      const {
-        regimentMap: newRegimentMap,
-        firstRegiment: newFirstRegiment,
-      } = buildRegimentMap(normalizedRegimentRows);
+    setRegimentMap(newRegimentMap);
+    setFirstRegiment(newFirstRegiment);
 
-      setRegimentMap(newRegimentMap);
-      setFirstRegiment(newFirstRegiment);
+    // SOS CALLOUTS
+    //
+    // SOS sheet format:
+    // Column B = Regiment
+    // Column C = Location
+    // Column D = Specialty
+    //
+    // We only need the locations because those determine
+    // which planets should pulsate on the map.
+    const sosRows = await getSOSSheetData();
 
-    } catch (err) {
-      console.error('FOB/Regiment refresh failed:', err);
-      setError(err.message || String(err));
-    }
-  };
+    const sosLocationKeys = new Set(
+      sosRows
+        .filter((row) => Array.isArray(row))
+        .map((row) => row[2])
+        .filter((location) => {
+          if (location == null) return false;
+
+          const normalized = normalizeKey(location);
+
+          // Ignore the sheet header.
+          return normalized !== 'location';
+        })
+        .map((location) => normalizeKey(location))
+        .filter(Boolean)
+    );
+
+    setSosLocations(sosLocationKeys);
+
+    console.log(
+      'SOS locations:',
+      Array.from(sosLocationKeys)
+    );
+  } catch (err) {
+    console.error('FOB/Regiment/SOS refresh failed:', err);
+    setError(err.message || String(err));
+  }
+};
+
 
   useEffect(() => {
     // Load immediately when the site opens
@@ -632,9 +667,9 @@ const centerOnPlanet = (planet, targetZoom = zoom) => {
           connections={connections}
           sectors={sectors}
           selectedPlanet={selectedPlanet}
-          //associatedPlanetKeys={associatedPlanetKeys}
           associatedFobKeys={associatedFobKeys}
           associatedPlanetIcons={associatedPlanetIcons}
+          sosLocations={sosLocations}
           onSelect={handleSelectPlanet}
           transformStyle={{
             transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,

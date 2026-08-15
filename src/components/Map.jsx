@@ -2,7 +2,22 @@ import { useRef, useEffect } from 'react';
 import Planet from './Planet';
 import Sector from './Sector';
 
-export default function Map({ containerRef, planets, connections, sectors, selectedPlanet, associatedFobKeys, associatedPlanetIcons, onSelect, transformStyle, onMouseDown, onMouseMove, onMouseUp, onWheel }) {
+export default function Map({
+  containerRef,
+  planets,
+  connections,
+  sectors,
+  selectedPlanet,
+  associatedFobKeys,
+  associatedPlanetIcons,
+  sosLocations,
+  onSelect,
+  transformStyle,
+  onMouseDown,
+  onMouseMove,
+  onMouseUp,
+  onWheel
+}) {
   const localRef = useRef(null);
   const ref = containerRef || localRef;
 
@@ -16,44 +31,52 @@ export default function Map({ containerRef, planets, connections, sectors, selec
     };
 
     node.addEventListener('wheel', handler, { passive: false });
-    return () => node.removeEventListener('wheel', handler);
+
+    return () => {
+      node.removeEventListener('wheel', handler);
+    };
   }, [onWheel, ref]);
 
   const flipY = (y) => 960 - y;
+
   const flippedSectors = sectors.map((sector) => ({
     ...sector,
     points: Array.isArray(sector.points)
       ? sector.points.map(([x, y]) => [x, flipY(y)])
       : undefined,
-    centerY: sector.centerY != null ? flipY(sector.centerY) : sector.centerY,
+    centerY:
+      sector.centerY != null
+        ? flipY(sector.centerY)
+        : sector.centerY,
   }));
-const positionedPlanets = planets.filter(
-  (planet) =>
-    typeof planet.x === 'number' &&
-    Number.isFinite(planet.x) &&
-    typeof planet.y === 'number' &&
-    Number.isFinite(planet.y)
-);
 
-const flippedPlanets = positionedPlanets.map((planet) => ({
-  ...planet,
-  y: flipY(planet.y),
-}));
+  const positionedPlanets = planets.filter(
+    (planet) =>
+      typeof planet.x === 'number' &&
+      Number.isFinite(planet.x) &&
+      typeof planet.y === 'number' &&
+      Number.isFinite(planet.y)
+  );
 
-const galaxyRadius =
-  flippedPlanets.length > 0
-    ? Math.min(
-        470,
-        Math.max(
-          ...flippedPlanets.map((planet) =>
-            Math.hypot(
-              planet.x - 480,
-              planet.y - 480
+  const flippedPlanets = positionedPlanets.map((planet) => ({
+    ...planet,
+    y: flipY(planet.y),
+  }));
+
+  const galaxyRadius =
+    flippedPlanets.length > 0
+      ? Math.min(
+          470,
+          Math.max(
+            ...flippedPlanets.map((planet) =>
+              Math.hypot(
+                planet.x - 480,
+                planet.y - 480
+              )
             )
-          )
-        ) + 20
-      )
-    : 100;
+          ) + 20
+        )
+      : 100;
 
   const normalizeKey = (value) =>
     String(value ?? '')
@@ -63,66 +86,127 @@ const galaxyRadius =
       .replace(/\s+/g, ' ');
 
   const getFdpHealthClass = (fdp) => {
-  const value = Number(fdp);
+    const value = Number(fdp);
 
-  if (!Number.isFinite(value)) {
-    return 'health-unknown';
-  }
+    if (!Number.isFinite(value)) {
+      return 'health-unknown';
+    }
 
-  if (value < 200) {
-    return 'health-critical';
-  }
+    if (value < 200) {
+      return 'health-critical';
+    }
 
-  if (value <= 490) {
-    return 'health-warning';
-  }
+    if (value <= 490) {
+      return 'health-warning';
+    }
 
-  return 'health-good';
-};
+    return 'health-good';
+  };
 
   return (
-    <div ref={ref} className="map" onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}>
-      <svg className="galaxy-svg" viewBox="0 0 960 960" preserveAspectRatio="xMidYMid meet" style={transformStyle}>
+    <div
+      ref={ref}
+      className="map"
+      onMouseDown={onMouseDown}
+      onMouseMove={onMouseMove}
+      onMouseUp={onMouseUp}
+      onMouseLeave={onMouseUp}
+    >
+      <svg
+        className="galaxy-svg"
+        viewBox="0 0 960 960"
+        preserveAspectRatio="xMidYMid meet"
+        style={transformStyle}
+      >
         <defs>
           <clipPath id="galaxy-mask">
-            <circle cx="480" cy="480" r={galaxyRadius} />
+            <circle
+              cx="480"
+              cy="480"
+              r={galaxyRadius}
+            />
           </clipPath>
         </defs>
 
         <g clipPath="url(#galaxy-mask)">
-          <circle cx="480" cy="480" r={galaxyRadius} fill="rgba(8, 12, 18, 0.95)" />
+          <circle
+            cx="480"
+            cy="480"
+            r={galaxyRadius}
+            fill="rgba(8, 12, 18, 0.95)"
+          />
 
           {flippedSectors.map((s) => (
-            <Sector key={s.id} sector={s} />
+            <Sector
+              key={s.id}
+              sector={s}
+            />
           ))}
 
           {connections.map(([fromId, toId]) => {
-            const from = flippedPlanets.find((p) => p.id === fromId);
-            const to = flippedPlanets.find((p) => p.id === toId);
+            const from = flippedPlanets.find(
+              (p) => p.id === fromId
+            );
+
+            const to = flippedPlanets.find(
+              (p) => p.id === toId
+            );
+
             if (!from || !to) return null;
-            return <line key={`${fromId}-${toId}`} className="connection" x1={from.x} y1={from.y} x2={to.x} y2={to.y} />;
+
+            return (
+              <line
+                key={`${fromId}-${toId}`}
+                className="connection"
+                x1={from.x}
+                y1={from.y}
+                x2={to.x}
+                y2={to.y}
+              />
+            );
           })}
 
           {flippedPlanets.map((planet) => {
-            const planetNameKey = normalizeKey(planet.name);
-            const planetIdKey = normalizeKey(planet.id);
-            const associatedRegimentIcon = associatedPlanetIcons?.[planetNameKey] || associatedPlanetIcons?.[planetIdKey];
+            const planetNameKey = normalizeKey(
+              planet.name
+            );
+
+            const planetIdKey = normalizeKey(
+              planet.id
+            );
+
+            const associatedRegimentIcon =
+              associatedPlanetIcons?.[planetNameKey] ||
+              associatedPlanetIcons?.[planetIdKey];
+
+            const hasSOS =
+              sosLocations?.has(planetNameKey) ||
+              sosLocations?.has(planetIdKey);
+
             return (
               <Planet
                 key={planet.id}
                 planet={planet}
-                selected={selectedPlanet?.id === planet.id}
-                hasAssociatedMatch={
-                  associatedFobKeys.has(planetNameKey) || associatedFobKeys.has(planetIdKey)
+                selected={
+                  selectedPlanet?.id === planet.id
                 }
-                associatedRegimentIcon={associatedRegimentIcon}
+                hasAssociatedMatch={
+                  associatedFobKeys.has(
+                    planetNameKey
+                  ) ||
+                  associatedFobKeys.has(
+                    planetIdKey
+                  )
+                }
+                associatedRegimentIcon={
+                  associatedRegimentIcon
+                }
+                hasSOS={hasSOS}
                 onSelect={onSelect}
               />
             );
           })}
         </g>
-
-        <circle cx="480" cy="480" r="440" className="galaxy-boundary" fill="none" />
       </svg>
     </div>
   );
