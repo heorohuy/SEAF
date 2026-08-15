@@ -1,7 +1,10 @@
 .navigation-menu-trigger {
-  position: fixed;
+  /* position: fixed;
   top: 15px;
-  right: 18px;
+  right: 18px; */
+
+  position: relative;
+  flex: 0 0 44px;
 
   z-index: 5000;
 
