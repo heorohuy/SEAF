@@ -45,7 +45,7 @@ export default function NavigationMenu() {
         className="navigation-menu-trigger"
         aria-label="Open navigation menu"
         aria-expanded={open}
-        onClick={() => setOpen(true)}
+        onClick={() => setOpen((prev) => !prev)}
       >
         <Menu size={24} />
       </button>
