@@ -5,7 +5,11 @@ import {
   X,
   Map,
   Database,
+  Shield,
+  Ship,
 } from 'lucide-react';
+
+
 
 import '../AppNavigation.css';
 
@@ -60,9 +64,8 @@ export default function NavigationMenu() {
       )}
 
       <aside
-        className={`navigation-menu-panel ${
-          open ? 'navigation-menu-panel--open' : ''
-        }`}
+        className={`navigation-menu-panel ${open ? 'navigation-menu-panel--open' : ''
+          }`}
         aria-hidden={!open}
       >
         <div className="navigation-menu-header">
@@ -96,8 +99,9 @@ export default function NavigationMenu() {
               to="/"
               end
               className={({ isActive }) =>
-                `navigation-menu-link ${
-                  isActive ? 'navigation-menu-link--active' : ''
+                `navigation-menu-link ${isActive
+                  ? 'navigation-menu-link--active'
+                  : ''
                 }`
               }
               onClick={closeMenu}
@@ -115,8 +119,9 @@ export default function NavigationMenu() {
             <NavLink
               to="/planets"
               className={({ isActive }) =>
-                `navigation-menu-link ${
-                  isActive ? 'navigation-menu-link--active' : ''
+                `navigation-menu-link ${isActive
+                  ? 'navigation-menu-link--active'
+                  : ''
                 }`
               }
               onClick={closeMenu}
@@ -132,11 +137,64 @@ export default function NavigationMenu() {
             </NavLink>
           </nav>
 
+          <div className="navigation-menu-section-label navigation-menu-section-label--force">
+            FORCE DATABASE
+          </div>
+
+          <nav className="navigation-menu-links">
+            <NavLink
+              to="/regiments"
+              className={({ isActive }) =>
+                `navigation-menu-link ${isActive
+                  ? 'navigation-menu-link--active'
+                  : ''
+                }`
+              }
+              onClick={closeMenu}
+            >
+              <span className="navigation-menu-link-icon">
+                <Shield size={19} />
+              </span>
+
+              <span className="navigation-menu-link-content">
+                <strong>REGIMENT LOADOUTS</strong>
+                <small>
+                  PERSONNEL // EQUIPMENT // SPECIALTIES
+                </small>
+              </span>
+            </NavLink>
+
+            <NavLink
+              to="/ships"
+              className={({ isActive }) =>
+                `navigation-menu-link ${isActive
+                  ? 'navigation-menu-link--active'
+                  : ''
+                }`
+              }
+              onClick={closeMenu}
+            >
+              <span className="navigation-menu-link-icon">
+                <Ship size={19} />
+              </span>
+
+              <span className="navigation-menu-link-content">
+                <strong>SHIP STRATAGEMS</strong>
+                <small>
+                  FLEET // STRATAGEMS // LIMITS
+                </small>
+              </span>
+            </NavLink>
+          </nav>
+
           <div className="navigation-menu-footer">
             <div>SUPER EARTH ARMED FORCES</div>
-            <div>LOGISTICS &amp; EMERGENCY MOVEMENT OPERATIONS NETWORK</div>
+            <div>
+              LOGISTICS &amp; EMERGENCY MOVEMENT OPERATIONS NETWORK
+            </div>
           </div>
         </div>
+
       </aside>
     </>
   );
