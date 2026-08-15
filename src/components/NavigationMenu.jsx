@@ -164,7 +164,7 @@ export default function NavigationMenu() {
               </span>
             </NavLink>
 
-            <NavLink
+            {/* <NavLink
               to="/ships"
               className={({ isActive }) =>
                 `navigation-menu-link ${isActive
@@ -184,7 +184,7 @@ export default function NavigationMenu() {
                   FLEET // STRATAGEMS // LIMITS
                 </small>
               </span>
-            </NavLink>
+            </NavLink> */}
           </nav>
 
           <div className="navigation-menu-footer">

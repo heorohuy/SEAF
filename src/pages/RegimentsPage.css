@@ -1,9 +1,23 @@
 :root {
   --ui-scale: 1.4;
+  --regiment-yellow: #f4b942;
+  --regiment-yellow-soft: rgba(244, 185, 66, 0.16);
+  --regiment-bg: #05090c;
+  --regiment-panel: #090e12;
+  --regiment-panel-light: #0d151a;
+  --regiment-border: rgba(116, 133, 144, 0.18);
+  --regiment-border-light: rgba(116, 133, 144, 0.1);
+  --regiment-text: #d7dde1;
+  --regiment-muted: #64737d;
 }
+
+/* -------------------------------------------------------------------------- */
+/* PAGE                                                                       */
+/* -------------------------------------------------------------------------- */
 
 .regiments-page {
   min-height: 100vh;
+
   background:
     radial-gradient(
       ellipse at 50% -20%,
@@ -12,8 +26,12 @@
     ),
     #05090c;
 
-  color: #d7dde1;
+  color: var(--regiment-text);
 }
+
+/* -------------------------------------------------------------------------- */
+/* HEADER                                                                     */
+/* -------------------------------------------------------------------------- */
 
 .regiments-header {
   position: sticky;
@@ -43,7 +61,7 @@
 }
 
 .regiments-header-title svg {
-  color: #f4b942;
+  color: var(--regiment-yellow);
 }
 
 .regiments-header-title div {
@@ -89,12 +107,16 @@
   letter-spacing: 1.5px;
 }
 
+/* -------------------------------------------------------------------------- */
+/* CONTENT                                                                    */
+/* -------------------------------------------------------------------------- */
+
 .regiments-content {
   width: min(1800px, calc(100% - 48px));
 
   margin: 0 auto;
 
-  padding: 42px 0 70px;
+  padding: 42px 0 80px;
 }
 
 .regiments-title {
@@ -126,6 +148,8 @@
 }
 
 .regiments-title p {
+  max-width: 650px;
+
   margin: 0;
 
   color: #61707a;
@@ -159,11 +183,15 @@
   letter-spacing: 1px;
 }
 
+/* -------------------------------------------------------------------------- */
+/* TOOLBAR                                                                    */
+/* -------------------------------------------------------------------------- */
+
 .regiments-toolbar {
   display: flex;
   gap: 8px;
 
-  margin-bottom: 10px;
+  margin-bottom: 18px;
 }
 
 .regiments-search {
@@ -186,10 +214,9 @@
 }
 
 .regiments-search:focus-within {
-  border-color:
-    rgba(244, 185, 66, 0.4);
+  border-color: rgba(244, 185, 66, 0.4);
 
-  color: #f4b942;
+  color: var(--regiment-yellow);
 }
 
 .regiments-search input {
@@ -236,10 +263,9 @@
 }
 
 .regiments-refresh:hover:not(:disabled) {
-  border-color:
-    rgba(244, 185, 66, 0.35);
+  border-color: rgba(244, 185, 66, 0.35);
 
-  color: #f4b942;
+  color: var(--regiment-yellow);
 }
 
 .regiments-refresh:disabled {
@@ -257,91 +283,513 @@
   }
 }
 
-.regiments-sheet-wrapper {
-  overflow-x: auto;
+/* -------------------------------------------------------------------------- */
+/* LOADOUT CONTAINER                                                           */
+/* -------------------------------------------------------------------------- */
 
-  border: 1px solid
-    rgba(116, 133, 144, 0.2);
-
-  background: #080d11;
-}
-
-.regiments-sheet {
-  min-width: 900px;
-}
-
-.regiments-row {
+.regiments-loadouts {
   display: grid;
 
-  /*
-   * Five equal regiment columns.
-   *
-   * If your sheet has six columns because the
-   * first column contains SLOT names, change
-   * this to:
-   *
-   * grid-template-columns:
-   *   180px repeat(5, minmax(160px, 1fr));
-   */
   grid-template-columns:
-    repeat(5, minmax(160px, 1fr));
+    repeat(
+      auto-fit,
+      minmax(390px, 1fr)
+    );
 
-  min-height: 40px;
+  gap: 14px;
 
-  border-bottom: 1px solid
-    rgba(116, 133, 144, 0.1);
+  align-items: start;
 }
 
-.regiments-row:last-child {
+.regiment-loadout {
+  overflow: hidden;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(13, 21, 26, 0.96),
+      rgba(7, 12, 16, 0.98)
+    );
+
+  border: 1px solid
+    rgba(116, 133, 144, 0.18);
+
+  box-shadow:
+    0 12px 40px
+      rgba(0, 0, 0, 0.25);
+}
+
+.regiment-loadout-header {
+  min-height: 78px;
+
+  display: grid;
+
+  grid-template-columns:
+    42px
+    1fr
+    auto;
+
+  align-items: center;
+
+  gap: 13px;
+
+  padding: 14px 16px;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(244, 185, 66, 0.08),
+      transparent 55%
+    );
+
+  border-bottom: 1px solid
+    rgba(244, 185, 66, 0.24);
+}
+
+.regiment-loadout-index {
+  width: 38px;
+  height: 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid
+    rgba(244, 185, 66, 0.35);
+
+  background: rgba(244, 185, 66, 0.05);
+
+  color: var(--regiment-yellow);
+
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.regiment-loadout-kicker {
+  margin-bottom: 4px;
+
+  color: #596771;
+
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+.regiment-loadout-header h2 {
+  margin: 0;
+
+  color: #e4e9eb;
+
+  font-size: 15px;
+  font-weight: 700;
+
+  letter-spacing: 1.5px;
+
+  text-transform: uppercase;
+}
+
+.regiment-loadout-count {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+
+  gap: 2px;
+}
+
+.regiment-loadout-count span {
+  color: #4e5c64;
+
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+.regiment-loadout-count strong {
+  color: var(--regiment-yellow);
+
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* LOADOUT BODY                                                                */
+/* -------------------------------------------------------------------------- */
+
+.regiment-loadout-body {
+  padding: 4px 0;
+}
+
+.regiment-slot {
+  padding: 18px 16px 20px;
+
+  border-bottom: 1px solid
+    rgba(116, 133, 144, 0.11);
+}
+
+.regiment-slot:last-child {
   border-bottom: 0;
 }
 
-.regiments-row-header {
-  position: sticky;
-  top: 68px;
-  z-index: 5;
+.regiment-slot-header {
+  display: flex;
+  align-items: center;
 
-  background: #0d151a;
+  gap: 10px;
 
-  border-bottom: 1px solid
-    rgba(244, 185, 66, 0.3);
+  margin-bottom: 14px;
 }
 
-.regiments-cell {
-  min-width: 0;
+.regiment-slot-number {
+  width: 28px;
+  height: 28px;
 
-  padding: 11px 12px;
+  flex-shrink: 0;
 
-  border-right: 1px solid
-    rgba(116, 133, 144, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-  color: #bfc8cd;
+  border: 1px solid
+    rgba(116, 133, 144, 0.25);
 
-  font-size: calc(11px * var(--ui-scale));
-  line-height: 1.4;
-}
+  background: #080d11;
 
-.regiments-cell:last-child {
-  border-right: 0;
-}
+  color: #66757e;
 
-.regiments-row-header
-  .regiments-cell {
-  color: #f4b942;
-
-  font-size: calc(11px * var(--ui-scale));
+  font-size: 9px;
   font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.regiment-slot-label {
+  color: var(--regiment-yellow);
+
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+}
+
+.regiment-slot-header h2 {
+  margin: 2px 0 0;
+
+  color: #cbd3d7;
+
+  font-size: 12px;
+  font-weight: 700;
+
   letter-spacing: 1.2px;
 
   text-transform: uppercase;
 }
 
-.regiments-row:not(
-    .regiments-row-header
-  ):hover {
-  background:
-    rgba(244, 185, 66, 0.025);
+/* -------------------------------------------------------------------------- */
+/* STRATAGEM GRID                                                              */
+/* -------------------------------------------------------------------------- */
+
+.regiment-stratagem-grid {
+  display: flex;
+  flex-wrap: wrap;
+
+  gap: 9px;
 }
+
+.regiment-stratagem {
+  position: relative;
+
+  min-width: 64px;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+}
+
+.regiment-stratagem-button {
+  position: relative;
+
+  width: 64px;
+  height: 64px;
+
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid
+    rgba(116, 133, 144, 0.18);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(18, 28, 34, 0.95),
+      rgba(7, 12, 16, 0.98)
+    );
+
+  cursor: pointer;
+
+  transition:
+    border-color 120ms ease,
+    background 120ms ease,
+    transform 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.regiment-stratagem-button:hover {
+  border-color: rgba(244, 185, 66, 0.5);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(29, 38, 42, 0.98),
+      rgba(9, 14, 18, 1)
+    );
+
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 5px 18px
+      rgba(0, 0, 0, 0.35);
+}
+
+.regiment-stratagem-expanded
+  .regiment-stratagem-button {
+  border-color: var(--regiment-yellow);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(244, 185, 66, 0.12),
+      rgba(8, 13, 17, 0.98)
+    );
+
+  box-shadow:
+    0 0 0 1px
+      rgba(244, 185, 66, 0.08),
+    0 7px 22px
+      rgba(0, 0, 0, 0.35);
+}
+
+.regiment-stratagem-icon-wrap {
+  width: 48px;
+  height: 48px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.regiment-stratagem-icon {
+  width: 46px;
+  height: 46px;
+
+  object-fit: contain;
+
+  display: block;
+}
+
+.regiment-icon-fallback {
+  width: 46px;
+  height: 46px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #65737c;
+
+  opacity: 0.75;
+}
+
+/* -------------------------------------------------------------------------- */
+/* HOVER NAME                                                                 */
+/* -------------------------------------------------------------------------- */
+
+.regiment-stratagem-hover-name {
+  position: absolute;
+
+  left: 50%;
+  bottom: calc(100% + 8px);
+
+  z-index: 10;
+
+  width: max-content;
+  max-width: 190px;
+
+  padding: 6px 8px;
+
+  pointer-events: none;
+
+  opacity: 0;
+
+  transform:
+    translate(-50%, 4px);
+
+  background: #080d11;
+
+  border: 1px solid
+    rgba(244, 185, 66, 0.3);
+
+  color: #dbe1e4;
+
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+
+  text-align: center;
+
+  transition:
+    opacity 100ms ease,
+    transform 100ms ease;
+}
+
+.regiment-stratagem-button:hover
+  .regiment-stratagem-hover-name {
+  opacity: 1;
+
+  transform:
+    translate(-50%, 0);
+}
+
+/* -------------------------------------------------------------------------- */
+/* EXPANDED INFORMATION                                                        */
+/* -------------------------------------------------------------------------- */
+
+.regiment-stratagem-details {
+  width: min(
+    360px,
+    calc(100vw - 72px)
+  );
+
+  margin-top: 10px;
+
+  padding: 13px 14px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(14, 22, 27, 0.98),
+      rgba(7, 12, 16, 0.98)
+    );
+
+  border: 1px solid
+    rgba(244, 185, 66, 0.25);
+
+  box-shadow:
+    0 12px 30px
+      rgba(0, 0, 0, 0.3);
+
+  animation:
+    regiment-expand 140ms ease-out;
+}
+
+@keyframes regiment-expand {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.regiment-stratagem-details-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 10px;
+}
+
+.regiment-stratagem-details-kicker {
+  color: #5e6d76;
+
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1.3px;
+}
+
+.regiment-stratagem-details h3 {
+  margin: 3px 0 0;
+
+  color: #e1e6e8;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  letter-spacing: 0.8px;
+
+  text-transform: uppercase;
+}
+
+.regiment-stratagem-collapse {
+  width: 25px;
+  height: 25px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border: 1px solid
+    rgba(116, 133, 144, 0.2);
+
+  background: transparent;
+
+  color: #687780;
+
+  cursor: pointer;
+}
+
+.regiment-stratagem-collapse:hover {
+  color: var(--regiment-yellow);
+
+  border-color:
+    rgba(244, 185, 66, 0.35);
+}
+
+.regiment-stratagem-details-meta {
+  display: flex;
+  flex-wrap: wrap;
+
+  gap: 6px;
+
+  margin: 9px 0;
+}
+
+.regiment-stratagem-details-meta span {
+  padding: 3px 6px;
+
+  background: rgba(244, 185, 66, 0.06);
+
+  border: 1px solid
+    rgba(244, 185, 66, 0.15);
+
+  color: #b58b35;
+
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+
+  text-transform: uppercase;
+}
+
+.regiment-stratagem-details p {
+  margin: 0;
+
+  color: #718089;
+
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+/* -------------------------------------------------------------------------- */
+/* STATES                                                                     */
+/* -------------------------------------------------------------------------- */
 
 .regiments-state {
   min-height: 100px;
@@ -374,7 +822,7 @@
 
   background: transparent;
 
-  color: #f4b942;
+  color: var(--regiment-yellow);
 
   padding: 7px 12px;
 
@@ -385,6 +833,24 @@
   letter-spacing: 1px;
 
   cursor: pointer;
+}
+
+.regiments-state button:hover {
+  background: rgba(244, 185, 66, 0.06);
+}
+
+/* -------------------------------------------------------------------------- */
+/* RESPONSIVE                                                                 */
+/* -------------------------------------------------------------------------- */
+
+@media (max-width: 1100px) {
+  .regiments-loadouts {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(320px, 1fr)
+      );
+  }
 }
 
 @media (max-width: 800px) {
@@ -398,6 +864,7 @@
 
   .regiments-content {
     width: calc(100% - 24px);
+
     padding-top: 28px;
   }
 
@@ -410,12 +877,58 @@
   }
 
   .regiments-title h1 {
-    font-size: calc(25px * var(--ui-scale));
+    font-size:
+      calc(25px * var(--ui-scale));
+
     letter-spacing: 2.5px;
   }
 
-  .regiments-sheet-wrapper {
-    margin-left: -2px;
-    margin-right: -2px;
+  .regiments-loadouts {
+    grid-template-columns: 1fr;
+  }
+
+  .regiment-loadout-header {
+    grid-template-columns:
+      38px
+      1fr
+      auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .regiments-toolbar {
+    flex-direction: column;
+  }
+
+  .regiments-refresh {
+    min-height: 40px;
+  }
+
+  .regiment-stratagem-grid {
+    gap: 7px;
+  }
+
+  .regiment-stratagem-button {
+    width: 58px;
+    height: 58px;
+  }
+
+  .regiment-stratagem-icon-wrap {
+    width: 44px;
+    height: 44px;
+  }
+
+  .regiment-stratagem-icon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .regiment-icon-fallback {
+    width: 42px;
+    height: 42px;
+  }
+
+  .regiment-stratagem-details {
+    width: calc(100vw - 58px);
   }
 }

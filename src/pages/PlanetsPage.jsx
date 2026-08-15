@@ -263,7 +263,7 @@ export default function PlanetsPage() {
 
   return (
     <div className="planets-page">
-      <NavigationMenu />
+      
 
       <header className="planets-topbar">
         <div className="planets-logo">
@@ -289,6 +289,7 @@ export default function PlanetsPage() {
                 : 'ONLINE'}
           </strong>
         </div>
+        <NavigationMenu />
       </header>
 
       <main className="planets-content">

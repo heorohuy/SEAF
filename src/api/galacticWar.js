@@ -514,17 +514,21 @@ export async function fetchGalacticMap() {
       ),
     );
 
-  const planets =
-    Array.isArray(rawPlanets)
-      ? rawPlanets.map((raw) =>
-        normalizePlanet(
-          raw,
-          planetInfoByIndex.get(
-            String(raw.index),
-          ),
-        ),
-      )
-      : [];
+const planets = Array.isArray(rawPlanets)
+  ? Array.from(
+      new Map(
+        rawPlanets.map((raw) => {
+          const planet = normalizePlanet(
+            raw,
+            planetInfoByIndex.get(String(raw.index)),
+          );
+
+          return [planet.name, planet];
+        }),
+      ).values(),
+    )
+  : [];
+
 
   const planetsByIndex =
     new Map(
