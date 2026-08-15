@@ -1,11 +1,7 @@
-I would like regiments to be color coded based on how close they are to total collapse
-JJ [SEAF],  — Yesterday at 7:11 PM
-HAH XD
-Wittletwee — Yesterday at 7:11 PM
-I would like a tactical/commands section that gives us an idea on what needs help/where they should consider dropping
-JJ [SEAF],  — Yesterday at 7:11 PM
-CALLED IT XD
-Wittletwee — Yesterday at 7:11 PM
+I would like regiments to be color coded based on how close they are to total collapse - done
+
+I would like a tactical/commands section that gives us an idea on what needs help/where they should consider dropping - done
+
 I would love if you could make a better automation to track the losses
 I would like a planetary objective section that explains which objectives are high priority with explanations as to why 
 SagePR [SCS],  — Yesterday at 7:13 PM
@@ -22,14 +18,14 @@ If you need autism to be able to use it you are discriminating against boring pe
 
 FrankTheDev — 8/12/2026 10:21 AM
 1) SEAF Loadout Documentation - Tabs/Hamburger Menu/Popup
-2) Distress Signals
+2) Distress Signals - done
 3) WebSocket dedicated to Sheet Updates? 
 JJ [SEAF],  — 8/12/2026 10:21 AM
-1) Create a Zoom Function to Zoom on the Target when I do a Search.
+1) Create a Zoom Function to Zoom on the Target when I do a Search. - done
 
-2) Create an Auto Zoom when APP is opened on the MOST FUCKED UP REGIMENT.
+2) Create an Auto Zoom when APP is opened on the MOST FUCKED UP REGIMENT. - done
 
-3) Can the zoom get to 500%
+3) Can the zoom get to 500% - done to 600%
 
 4) Add arrow key navigation for the map?
 
