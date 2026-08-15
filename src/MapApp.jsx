@@ -880,7 +880,7 @@ const centerOnPlanet = (planet, targetZoom = zoom) => {
               </div>
             )}
 
-            <div className="liberation">
+            {/* <div className="liberation">
               <div className="liberation-label">
                 <span>LIBERATION</span>
                 <strong>{Math.round(selectedPlanet?.liberation || 0)}%</strong>
@@ -889,7 +889,7 @@ const centerOnPlanet = (planet, targetZoom = zoom) => {
               <div className="progress">
                 <div style={{ width: `${selectedPlanet?.liberation || 0}%` }} />
               </div>
-            </div>
+            </div> */}
 
             {/* <div className="status-block">
             <div className="status-label">STATUS</div>
