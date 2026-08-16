@@ -20,7 +20,7 @@ import infantryIcon from './assets/1986-JJ-SEAFICONS-INFANTRY.png';
 import cavalryIcon from './assets/1986-JJ-SEAFICONS-MECHANIZED.png';
 import sapperIcon from './assets/1986-JJ-SEAFICONS-SAPPER.png';
 
-import AdBanner from './components/AdBanner';
+// import AdBanner from './components/AdBanner';
 import SiteFooter from "./components/SiteFooter";
 
 
@@ -458,8 +458,7 @@ export default function App() {
       if (
         target instanceof HTMLInputElement ||
         target instanceof HTMLTextAreaElement ||
-        target instanceof HTMLSelectElement ||
-        target instanceof HTMLButtonElement
+        target instanceof HTMLSelectElement
       ) {
         return;
       }
@@ -725,9 +724,9 @@ export default function App() {
       <main className="galaxy">
         <div className="stars" />
 
-        <div className="ad-strip">
+        {/* <div className="ad-strip">
           <AdBanner />
-        </div>
+        </div> */}
 
         <Map
           containerRef={mapContainerRef}
