@@ -56,7 +56,7 @@ const guideSections = [
       {
         title: "Move around the map",
         text:
-          "Click and drag the map to move around the galaxy. You can also use your mouse wheel to zoom.",
+          "Click and drag the map to move around the galaxy. You can also use the arrow keys to pan the map with the keyboard. Hold SHIFT while pressing an arrow key to move farther with each input. Use the mouse wheel or the zoom controls to change the map's zoom level.",
       },
       {
         title: "Use the zoom controls",

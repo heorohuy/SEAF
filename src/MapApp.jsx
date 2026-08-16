@@ -353,72 +353,72 @@ export default function App() {
     });
   }, [firstRegiment, planets]);
 
-const refreshPersonnelData = async () => {
-  try {
-    const fobRows = await getFobSheetData();
+  const refreshPersonnelData = async () => {
+    try {
+      const fobRows = await getFobSheetData();
 
-    const normalizedFobRows = fobRows.map((row) =>
-      row.map((cell) =>
-        typeof cell === 'string' ? cell.trim() : cell
-      )
-    );
+      const normalizedFobRows = fobRows.map((row) =>
+        row.map((cell) =>
+          typeof cell === 'string' ? cell.trim() : cell
+        )
+      );
 
-    setFobMap(buildFobMap(normalizedFobRows));
+      setFobMap(buildFobMap(normalizedFobRows));
 
-    const regimentRows = await getRegimentSheetData();
+      const regimentRows = await getRegimentSheetData();
 
-    const normalizedRegimentRows = regimentRows.map((row) =>
-      row.map((cell) =>
-        typeof cell === 'string' ? cell.trim() : cell
-      )
-    );
+      const normalizedRegimentRows = regimentRows.map((row) =>
+        row.map((cell) =>
+          typeof cell === 'string' ? cell.trim() : cell
+        )
+      );
 
-    const {
-      regimentMap: newRegimentMap,
-      firstRegiment: newFirstRegiment,
-    } = buildRegimentMap(normalizedRegimentRows);
+      const {
+        regimentMap: newRegimentMap,
+        firstRegiment: newFirstRegiment,
+      } = buildRegimentMap(normalizedRegimentRows);
 
-    setRegimentMap(newRegimentMap);
-    setFirstRegiment(newFirstRegiment);
+      setRegimentMap(newRegimentMap);
+      setFirstRegiment(newFirstRegiment);
 
-    // SOS CALLOUTS
-    //
-    // SOS sheet format:
-    // Column B = Regiment
-    // Column C = Location
-    // Column D = Specialty
-    //
-    // We only need the locations because those determine
-    // which planets should pulsate on the map.
-    const sosRows = await getSOSSheetData();
+      // SOS CALLOUTS
+      //
+      // SOS sheet format:
+      // Column B = Regiment
+      // Column C = Location
+      // Column D = Specialty
+      //
+      // We only need the locations because those determine
+      // which planets should pulsate on the map.
+      const sosRows = await getSOSSheetData();
 
-    const sosLocationKeys = new Set(
-      sosRows
-        .filter((row) => Array.isArray(row))
-        .map((row) => row[2])
-        .filter((location) => {
-          if (location == null) return false;
+      const sosLocationKeys = new Set(
+        sosRows
+          .filter((row) => Array.isArray(row))
+          .map((row) => row[2])
+          .filter((location) => {
+            if (location == null) return false;
 
-          const normalized = normalizeKey(location);
+            const normalized = normalizeKey(location);
 
-          // Ignore the sheet header.
-          return normalized !== 'location';
-        })
-        .map((location) => normalizeKey(location))
-        .filter(Boolean)
-    );
+            // Ignore the sheet header.
+            return normalized !== 'location';
+          })
+          .map((location) => normalizeKey(location))
+          .filter(Boolean)
+      );
 
-    setSosLocations(sosLocationKeys);
+      setSosLocations(sosLocationKeys);
 
-    console.log(
-      'SOS locations:',
-      Array.from(sosLocationKeys)
-    );
-  } catch (err) {
-    console.error('FOB/Regiment/SOS refresh failed:', err);
-    setError(err.message || String(err));
-  }
-};
+      console.log(
+        'SOS locations:',
+        Array.from(sosLocationKeys)
+      );
+    } catch (err) {
+      console.error('FOB/Regiment/SOS refresh failed:', err);
+      setError(err.message || String(err));
+    }
+  };
 
 
   useEffect(() => {
@@ -449,6 +449,49 @@ const refreshPersonnelData = async () => {
     };
   }, []);
 
+  useEffect(() => {
+    const handleMapKeyboard = (e) => {
+      // Don't hijack arrow keys while typing in search/input controls.
+      const target = e.target;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        target instanceof HTMLButtonElement
+      ) {
+        return;
+      }
+
+      const directions = {
+        ArrowUp: { x: 0, y: 1 },
+        ArrowDown: { x: 0, y: -1 },
+        ArrowLeft: { x: 1, y: 0 },
+        ArrowRight: { x: -1, y: 0 },
+      };
+
+      const direction = directions[e.key];
+
+      if (!direction) return;
+
+      e.preventDefault();
+
+      const baseSpeed = 40;
+      const speed = e.shiftKey ? baseSpeed * 2 : baseSpeed;
+
+      setOffset((current) => ({
+        x: current.x + direction.x * speed,
+        y: current.y + direction.y * speed,
+      }));
+    };
+
+    window.addEventListener('keydown', handleMapKeyboard);
+
+    return () => {
+      window.removeEventListener('keydown', handleMapKeyboard);
+    };
+  }, []);
+
+
   const handleMouseDown = (e) => {
     dragging.current = true;
     lastMouse.current = { x: e.clientX, y: e.clientY };
@@ -473,44 +516,67 @@ const refreshPersonnelData = async () => {
     else zoomIn();
   };
 
-const centerOnPlanet = (planet, targetZoom = zoom) => {
-  const container = mapContainerRef.current;
+  const centerOnPlanet = (planet, targetZoom = zoom) => {
+    const container = mapContainerRef.current;
 
-  if (
-    !container ||
-    !planet ||
-    typeof planet.x !== 'number' ||
-    typeof planet.y !== 'number' ||
-    !Number.isFinite(planet.x) ||
-    !Number.isFinite(planet.y)
-  ) {
-    return;
-  }
+    if (
+      !container ||
+      !planet ||
+      typeof planet.x !== 'number' ||
+      typeof planet.y !== 'number' ||
+      !Number.isFinite(planet.x) ||
+      !Number.isFinite(planet.y)
+    ) {
+      return;
+    }
 
-  const rect = container.getBoundingClientRect();
+    const rect = container.getBoundingClientRect();
 
-  // The SVG uses a 960 x 960 viewBox.
-  // Map.jsx flips the Y coordinate with: 960 - y
-  const svgSize = 960;
-  const scale = Math.min(
-    rect.width / svgSize,
-    rect.height / svgSize
-  );
+    // The SVG uses a 960 x 960 viewBox.
+    // Map.jsx flips the Y coordinate with: 960 - y
+    const svgSize = 960;
+    const scale = Math.min(
+      rect.width / svgSize,
+      rect.height / svgSize
+    );
 
-  const flippedY = svgSize - planet.y;
+    const flippedY = svgSize - planet.y;
 
-  // Keep the selected planet at the center of the viewport
-  const offsetX =
-    -(planet.x - svgSize / 2) * scale * targetZoom;
+    // Keep the selected planet at the center of the viewport
+    const offsetX =
+      -(planet.x - svgSize / 2) * scale * targetZoom;
 
-  const offsetY =
-    -(flippedY - svgSize / 2) * scale * targetZoom;
+    const offsetY =
+      -(flippedY - svgSize / 2) * scale * targetZoom;
 
-  setOffset({
-    x: offsetX,
-    y: offsetY,
-  });
-};
+    setOffset({
+      x: offsetX,
+      y: offsetY,
+    });
+  };
+
+  const handleCenterOnSuperEarth = () => {
+    const superEarth = planets.find(
+      (planet) =>
+        planet.id === 'super-earth' ||
+        normalizeKey(planet.name) === 'super earth'
+    );
+
+    if (!superEarth) return;
+
+    setSelectedPlanet(superEarth);
+    setActiveFob(null);
+    setActiveRegiment(null);
+
+    const targetZoom = 6;
+
+    setZoom(targetZoom);
+
+    requestAnimationFrame(() => {
+      centerOnPlanet(superEarth, targetZoom);
+    });
+  };
+
 
   const handleSearchSubmit = (event) => {
     event.preventDefault();
@@ -611,22 +677,22 @@ const centerOnPlanet = (planet, targetZoom = zoom) => {
   const formatValue = (v) => (v === undefined || v === null || v === '' ? '—' : String(v));
 
   const getFdpHealthClass = (fdp) => {
-  const value = Number(fdp);
+    const value = Number(fdp);
 
-  if (!Number.isFinite(value)) {
-    return 'health-unknown';
-  }
+    if (!Number.isFinite(value)) {
+      return 'health-unknown';
+    }
 
-  if (value < 200) {
-    return 'health-critical';
-  }
+    if (value < 200) {
+      return 'health-critical';
+    }
 
-  if (value <= 490) {
-    return 'health-warning';
-  }
+    if (value <= 490) {
+      return 'health-warning';
+    }
 
-  return 'health-good';
-};
+    return 'health-good';
+  };
 
   return (
     <div className="app">
@@ -682,12 +748,33 @@ const centerOnPlanet = (planet, targetZoom = zoom) => {
           onWheel={handleWheel}
         />
 
-        <div className="map-title">
+        <div
+          className="map-title"
+          onClick={handleCenterOnSuperEarth}
+          role="button"
+          tabIndex={0}
+          title="Center map on Super Earth"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleCenterOnSuperEarth();
+            }
+          }}
+        >
           <Crosshair size={18} />
           <span>GALACTIC MAP</span>
-          {loading && <span style={{ marginLeft: 8, color: '#8f9aa5', fontSize: 10 }}>LOADING…</span>}
-          {error && <span style={{ marginLeft: 8, color: '#ff6b6b', fontSize: 10 }}>API ERROR</span>}
+          {loading && (
+            <span style={{ marginLeft: 8, color: '#8f9aa5', fontSize: 10 }}>
+              LOADING…
+            </span>
+          )}
+          {error && (
+            <span style={{ marginLeft: 8, color: '#ff6b6b', fontSize: 10 }}>
+              API ERROR
+            </span>
+          )}
         </div>
+
 
         <div className="search-widget">
           <form className="search-form" onSubmit={handleSearchSubmit}>
