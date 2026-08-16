@@ -15,6 +15,9 @@ import NavigationMenu from '../components/NavigationMenu';
 import '../AppNavigation.css';
 import './PlanetsPage.css';
 
+import SiteFooter from "../components/SiteFooter";
+
+
 function formatValue(value) {
   if (
     value === undefined ||
@@ -537,6 +540,7 @@ export default function PlanetsPage() {
             </div>
           ))}
       </main>
+      <SiteFooter />
     </div>
   );
 }

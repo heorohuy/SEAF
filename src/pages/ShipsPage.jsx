@@ -10,6 +10,8 @@ import {
 } from "../api/sicarisShipStratagems.js";
 
 import "./ShipsPage.css";
+import SiteFooter from "../components/SiteFooter";
+
 
 export default function ShipsPage() {
   const [rows, setRows] = useState([]);
@@ -166,6 +168,7 @@ export default function ShipsPage() {
             </div>
           )}
       </main>
+      <SiteFooter />
     </div>
   );
 }

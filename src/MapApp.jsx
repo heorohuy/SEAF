@@ -21,6 +21,8 @@ import cavalryIcon from './assets/1986-JJ-SEAFICONS-MECHANIZED.png';
 import sapperIcon from './assets/1986-JJ-SEAFICONS-SAPPER.png';
 
 import AdBanner from './components/AdBanner';
+import SiteFooter from "./components/SiteFooter";
+
 
 const parseCellValue = (cell) => {
   if (cell == null) return undefined;
@@ -990,6 +992,8 @@ export default function App() {
           </section>
         )}
       </main>
+
+      <SiteFooter />
     </div>
   );
 

@@ -12,6 +12,8 @@ import {
 import NavigationMenu from "../components/NavigationMenu";
 
 import "./GuidePage.css";
+import SiteFooter from "../components/SiteFooter";
+
 
 const guideSections = [
   {
@@ -506,6 +508,7 @@ export default function GuidePage() {
           </div>
         </section>
       </main>
+      <SiteFooter />
     </div>
   );
 }

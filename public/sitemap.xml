@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+>
+  <url>
+    <loc>https://seaf-lemon.vercel.app/</loc>
+  </url>
+
+  <url>
+    <loc>https://seaf-lemon.vercel.app/guide</loc>
+  </url>
+
+  <url>
+    <loc>https://seaf-lemon.vercel.app/planets</loc>
+  </url>
+
+  <url>
+    <loc>https://seaf-lemon.vercel.app/regiments</loc>
+  </url>
+
+  <url>
+    <loc>https://seaf-lemon.vercel.app/about</loc>
+  </url>
+
+  <url>
+    <loc>https://seaf-lemon.vercel.app/privacy</loc>
+  </url>
+
+  <url>
+    <loc>https://seaf-lemon.vercel.app/terms</loc>
+  </url>
+</urlset>

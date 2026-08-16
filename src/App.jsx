@@ -5,6 +5,10 @@ import PlanetsPage from './pages/PlanetsPage.jsx';
 import RegimentsPage from './pages/RegimentsPage.jsx';
 import ShipsPage from './pages/ShipsPage.jsx';
 import GuidePage from "./pages/GuidePage.jsx";
+import PrivacyPage from "./pages/PrivacyPage.jsx";
+import AboutPage from "./pages/AboutPage.jsx";
+import TermsPage from "./pages/TermsPage.jsx";
+
 
 export default function App() {
   return (
@@ -38,6 +42,22 @@ export default function App() {
         path="/guide"
         element={<GuidePage />}
       />
+
+      <Route
+        path="/privacy"
+        element={<PrivacyPage />}
+      />
+
+      <Route
+        path="/about"
+        element={<AboutPage />}
+      />
+
+      <Route
+        path="/terms"
+        element={<TermsPage />}
+      />
+
 
     </Routes>
   );

@@ -24,6 +24,8 @@ import {
 } from "../api/stratagems.js";
 
 import "./RegimentsPage.css";
+import SiteFooter from "../components/SiteFooter";
+
 
 /*
  * ---------------------------------------------------------------------------
@@ -1581,6 +1583,7 @@ export default function RegimentsPage() {
             </div>
           )}
       </main>
+      <SiteFooter />
     </div>
   );
 }
