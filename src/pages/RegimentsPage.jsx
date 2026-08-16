@@ -107,87 +107,101 @@ function parseLoadouts(rows) {
 
     const slots = [];
 
-    let currentSlot = null;
-    let foundCategory = false;
+let currentSlot = null;
+let expectingCategory = false;
 
-    for (
-      let rowIndex = 2;
-      rowIndex < rows.length;
-      rowIndex += 1
-    ) {
-      const value = cleanCell(
-        rows[rowIndex]?.[columnIndex]
-      );
+for (
+  let rowIndex = 2;
+  rowIndex < rows.length;
+  rowIndex += 1
+) {
+  const value = cleanCell(
+    rows[rowIndex]?.[columnIndex]
+  );
 
-      /*
-       * Empty cells are irrelevant.
-       *
-       * Do NOT use empty cells as slot boundaries.
-       */
-      if (!value) {
-        continue;
-      }
+  if (!value) {
+    continue;
+  }
 
-      const slotMatch =
-        value.match(SLOT_PATTERN);
+  const slotMatch = value.match(SLOT_PATTERN);
 
-      /*
-       * A SLOT row always starts a new section.
-       */
-      if (slotMatch) {
-        currentSlot = {
-          number: Number(slotMatch[1]),
-          label: value.toUpperCase(),
-          category: "",
-          items: [],
-        };
+  /*
+   * New slot.
+   */
+  if (slotMatch) {
+    /*
+     * The category may be included in the same cell:
+     *
+     *   SLOT 1 Backpack
+     *
+     * or:
+     *
+     *   SLOT 1
+     *   Backpack
+     *
+     * Handle the first form here.
+     */
+    const categoryFromSlot = value
+      .replace(SLOT_PATTERN, "")
+      .trim();
 
-        slots.push(currentSlot);
+    currentSlot = {
+      number: Number(slotMatch[1]),
+      label: `SLOT ${slotMatch[1]}`,
+      category: categoryFromSlot,
+      items: [],
+    };
 
-        foundCategory = false;
+    slots.push(currentSlot);
 
-        continue;
-      }
+    /*
+     * If no category was included in the SLOT cell,
+     * the next non-empty row is the category.
+     */
+    expectingCategory = !categoryFromSlot;
 
-      /*
-       * Ignore content before the first SLOT.
-       */
-      if (!currentSlot) {
-        continue;
-      }
+    continue;
+  }
 
-      /*
-       * The FIRST non-empty value after SLOT X
-       * is the subsection/category.
-       *
-       * This is important because "Backpack",
-       * "Specialist Weapon", "Regiment Specialty",
-       * and "Universal" are categories, not
-       * stratagems.
-       */
-      if (!foundCategory) {
-        currentSlot.category = value;
-        foundCategory = true;
-        continue;
-      }
+  /*
+   * Ignore anything before the first SLOT.
+   */
+  if (!currentSlot) {
+    continue;
+  }
 
-      /*
-       * Every subsequent non-empty value belongs
-       * to this slot.
-       *
-       * This intentionally allows ONE item.
-       */
-      const itemName = cleanStratagemName(value);
+  /*
+   * Support sheets where the category is stored in
+   * its own row:
+   *
+   *   SLOT 1
+   *   Backpack
+   *   B-1 Supply Pack
+   *
+   * Only consume that row as the category.
+   */
+  if (expectingCategory) {
+    currentSlot.category = value;
+    expectingCategory = false;
+    continue;
+  }
 
-      if (!itemName) {
-        continue;
-      }
+  /*
+   * Every remaining value is a real stratagem.
+   *
+   * This means the FIRST stratagem is retained.
+   */
+  const itemName = cleanStratagemName(value);
 
-      currentSlot.items.push({
-        name: itemName,
-        category: currentSlot.category,
-      });
-    }
+  if (!itemName) {
+    continue;
+  }
+
+  currentSlot.items.push({
+    name: itemName,
+    category: currentSlot.category,
+  });
+}
 
     /*
      * Keep every slot that has a category.
@@ -209,9 +223,6 @@ function parseLoadouts(rows) {
     if (validSlots.length > 0) {
       loadouts.push({
         title: regimentName,
-        universalType: cleanCell(
-          rows[0]?.[columnIndex]
-        ),
         slots: validSlots,
       });
     }
@@ -1104,6 +1115,11 @@ export default function RegimentsPage() {
 
       const data = await getSheetData();
 
+      // Keep the complete sheet structure intact.
+      // parseLoadouts() knows that:
+      //   rows[0] = top metadata row (ignored)
+      //   rows[1] = regiment names
+      //   rows[2+] = slot data
       setRows(data);
       setExpandedItem(null);
     } catch (err) {
@@ -1313,29 +1329,7 @@ export default function RegimentsPage() {
                     key={`${loadout.title}-${loadoutIndex}`}
                   >
                     <header className="regiment-loadout-header">
-                      <div className="regiment-loadout-index">
-                        {String(
-                          loadoutIndex + 1
-                        ).padStart(2, "0")}
-                      </div>
-
-                      <div>
-                        <div className="regiment-loadout-kicker">
-                          {loadout.universalType || "AUTHORIZED LOADOUT"}
-                        </div>
-
-                        <h2>{loadout.title}</h2>
-                      </div>
-
-
-                      <div className="regiment-loadout-count">
-                        <span>SLOTS</span>
-                        <strong>
-                          {String(
-                            loadout.slots.length
-                          ).padStart(2, "0")}
-                        </strong>
-                      </div>
+                      <h2>{loadout.title}</h2>
                     </header>
 
                     <div className="regiment-loadout-body">
