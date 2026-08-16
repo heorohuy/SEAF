@@ -118,37 +118,8 @@ export default function AboutPage() {
           </p>
         </section>
 
-        <section
-          id="contact"
-          className="legal-section"
-        >
-          <h2>04 // CONTACT &amp; CORRECTIONS</h2>
-
-
-          <p>
-            Found incorrect information, a broken feature, missing
-            data, or something that should be corrected?
-          </p>
-
-          <p>
-            Please use the project's GitHub repository and open an
-            issue describing the problem. Include the affected page,
-            planet, regiment, or other relevant information whenever
-            possible.
-          </p>
-
-          <div className="legal-contact-box">
-            <span>PROJECT REPOSITORY</span>
-            <strong>github.com/heorohuy/SEAF</strong>
-            <small>
-              Use the repository's Issues section for bug reports,
-              corrections, and project feedback.
-            </small>
-          </div>
-        </section>
-
         <section className="legal-section">
-          <h2>05 // OFFICIAL STATUS</h2>
+          <h2>04 // OFFICIAL STATUS</h2>
 
           <p>
             S.E.A.F. L.E.M.O.N. is an unofficial fan-made project. It
@@ -164,7 +135,7 @@ export default function AboutPage() {
         </section>
 
         <section className="legal-section">
-          <h2>06 // PROJECT PURPOSE</h2>
+          <h2>05 // PROJECT PURPOSE</h2>
 
           <p>
             This project exists to provide players with a convenient
