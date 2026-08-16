@@ -70,7 +70,7 @@
 .regiments-header-title span {
   color: #dce2e5;
 
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
   letter-spacing: 2px;
 }
@@ -272,6 +272,48 @@
   animation: regiment-spin 1s linear infinite;
 }
 
+.regiments-cache-clear {
+  min-width: 115px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(116, 133, 144, 0.2);
+
+  background: #090e12;
+
+  color: #687780;
+
+  font-family: inherit;
+
+  font-size: calc(11px * var(--ui-scale));
+  font-weight: 700;
+  letter-spacing: 1px;
+
+  cursor: pointer;
+
+  transition:
+    border-color 120ms ease,
+    color 120ms ease,
+    background 120ms ease;
+}
+
+.regiments-cache-clear:hover {
+  border-color: rgba(244, 185, 66, 0.45);
+
+  background:
+    rgba(244, 185, 66, 0.05);
+
+  color: var(--regiment-yellow);
+}
+
+.regiments-cache-clear:active {
+  background:
+    rgba(244, 185, 66, 0.09);
+}
+
+
 @keyframes regiment-spin {
   to {
     transform: rotate(360deg);
@@ -351,7 +393,7 @@
 
   color: var(--regiment-yellow);
 
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
   letter-spacing: 1px;
 }
@@ -361,7 +403,7 @@
 
   color: #596771;
 
-  font-size: 9px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
   letter-spacing: 1.5px;
 }
@@ -371,7 +413,7 @@
 
   color: #e4e9eb;
 
-  font-size: 15px;
+  font-size: calc(15px * var(--ui-scale));
   font-weight: 700;
 
   letter-spacing: 1.5px;
@@ -390,7 +432,7 @@
 .regiment-loadout-count span {
   color: #4e5c64;
 
-  font-size: 8px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
   letter-spacing: 1.5px;
 }
@@ -398,7 +440,7 @@
 .regiment-loadout-count strong {
   color: var(--regiment-yellow);
 
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-scale));
   letter-spacing: 1px;
 }
 
@@ -445,7 +487,7 @@
 
   color: #66757e;
 
-  font-size: 9px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
   letter-spacing: 1px;
 }
@@ -453,7 +495,7 @@
 .regiment-slot-label {
   color: var(--regiment-yellow);
 
-  font-size: 9px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
   letter-spacing: 1.4px;
 }
@@ -463,7 +505,7 @@
 
   color: #cbd3d7;
 
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-scale));
   font-weight: 700;
 
   letter-spacing: 1.2px;
@@ -609,7 +651,7 @@
 
   color: #dbe1e4;
 
-  font-size: 9px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
   letter-spacing: 0.7px;
 
@@ -676,7 +718,7 @@
 .regiment-stratagem-details-kicker {
   color: #5e6d76;
 
-  font-size: 8px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
   letter-spacing: 1.3px;
 }
@@ -686,7 +728,7 @@
 
   color: #e1e6e8;
 
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-scale));
   font-weight: 700;
 
   letter-spacing: 0.8px;
@@ -738,7 +780,7 @@
 
   color: #b58b35;
 
-  font-size: 8px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
   letter-spacing: 0.8px;
 
@@ -750,7 +792,7 @@
 
   color: #718089;
 
-  font-size: 10px;
+  font-size: calc(11px * var(--ui-scale));
   line-height: 1.6;
 }
 
@@ -861,9 +903,11 @@
     flex-direction: column;
   }
 
-  .regiments-refresh {
-    min-height: 40px;
+  .regiments-refresh,
+  .regiments-cache-clear {
+    min-height: 145px;
   }
+
 
   .regiment-stratagem-grid {
     gap: 7px;
@@ -911,7 +955,7 @@
 
   color: #596871;
 
-  font-size: 8px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
   letter-spacing: 1.3px;
 }
@@ -937,7 +981,7 @@
 
   color: var(--regiment-yellow);
 
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-scale));
   font-weight: 700;
 
   box-shadow:
@@ -972,7 +1016,7 @@
 
   color: #53626b;
 
-  font-size: 7px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
   letter-spacing: 1px;
 }
@@ -982,7 +1026,7 @@
 
   color: #cbd3d7;
 
-  font-size: 10px;
+  font-size: calc(11px * var(--ui-scale));
   letter-spacing: 0.4px;
 }
 
@@ -1003,7 +1047,7 @@
 
   color: #7d8b93;
 
-  font-size: 7px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
   letter-spacing: 0.7px;
 
@@ -1024,7 +1068,7 @@
 .regiment-stratagem-source span {
   color: #4f5d65;
 
-  font-size: 7px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
   letter-spacing: 1px;
 }
@@ -1032,7 +1076,7 @@
 .regiment-stratagem-source strong {
   color: #77858d;
 
-  font-size: 8px;
+  font-size: calc(11px * var(--ui-scale));
   letter-spacing: 0.6px;
 
   text-align: right;
@@ -1047,7 +1091,7 @@
 
   color: #718089;
 
-  font-size: 10px;
+  font-size: calc(11px * var(--ui-scale));
   line-height: 1.65;
 }
 
@@ -1056,7 +1100,7 @@
 
   color: #596871;
 
-  font-size: 8px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
   letter-spacing: 1px;
 
@@ -1073,7 +1117,7 @@
 
   color: #8c6d2e;
 
-  font-size: 7px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
   letter-spacing: 1px;
 
@@ -1110,7 +1154,7 @@
 
   color: #4f5d65;
 
-  font-size: 8px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
   letter-spacing: 1.2px;
 }
@@ -1118,7 +1162,7 @@
 .regiments-catalog-status strong {
   color: #65757e;
 
-  font-size: 8px;
+  font-size: calc(11px * var(--ui-scale));
   letter-spacing: 1px;
 }
 
@@ -1127,7 +1171,7 @@
 }
 
 /* -------------------------------------------------------------------------- */
-/* METADATA TAGS                                                              */
+/* STRATAGEM INFORMATION                                                      */
 /* -------------------------------------------------------------------------- */
 
 .regiment-stratagem-details-meta {
@@ -1136,30 +1180,219 @@
 
   gap: 5px;
 
-  margin: 10px 0;
+  margin: 10px 0 12px;
 }
 
 .regiment-stratagem-details-meta span {
-  padding: 4px 6px;
+  padding: 5px 7px;
 
-  background: rgba(244, 185, 66, 0.055);
+  background: rgba(244, 185, 66, 0.045);
 
   border: 1px solid rgba(244, 185, 66, 0.14);
 
-  color: #a98235;
+  color: #9d7b32;
 
   font-size: 7px;
   font-weight: 700;
+
+  letter-spacing: 0.8px;
+
+  text-transform: uppercase;
+}
+
+.regiment-stratagem-meta-sheet {
+  color: #b28a37 !important;
+}
+
+
+/* -------------------------------------------------------------------------- */
+/* STAT GRID                                                                  */
+/* -------------------------------------------------------------------------- */
+
+.regiment-stratagem-stats {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 5px;
+
+  margin: 10px 0;
+}
+
+.regiment-stratagem-stat {
+  min-width: 0;
+
+  padding: 8px 9px;
+
+  background:
+    rgba(116, 133, 144, 0.035);
+
+  border:
+    1px solid rgba(116, 133, 144, 0.12);
+}
+
+.regiment-stratagem-stat span {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: #53626b;
+
+  font-size: 7px;
+  font-weight: 700;
+
+  letter-spacing: 1px;
+}
+
+.regiment-stratagem-stat strong {
+  display: block;
+
+  color: #cbd3d7;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 0.3px;
+
+  white-space: nowrap;
+}
+
+
+/* -------------------------------------------------------------------------- */
+/* TRAITS                                                                     */
+/* -------------------------------------------------------------------------- */
+
+.regiment-stratagem-traits {
+  margin: 11px 0;
+}
+
+.regiment-stratagem-section-label {
+  margin-bottom: 6px;
+
+  color: #53626b;
+
+  font-size: 7px;
+  font-weight: 700;
+
+  letter-spacing: 1.1px;
+}
+
+.regiment-stratagem-traits-list {
+  display: flex;
+  flex-wrap: wrap;
+
+  gap: 5px;
+}
+
+.regiment-stratagem-traits-list span {
+  padding: 4px 7px;
+
+  background: rgba(116, 133, 144, 0.055);
+
+  border:
+    1px solid rgba(116, 133, 144, 0.16);
+
+  color: #89959b;
+
+  font-size: 7px;
+  font-weight: 700;
+
   letter-spacing: 0.7px;
 
   text-transform: uppercase;
 }
 
-.regiment-stratagem-details-meta
-.regiment-stratagem-meta-sheet {
-  color: #77858d;
 
-  background: rgba(116, 133, 144, 0.045);
+/* -------------------------------------------------------------------------- */
+/* CODE                                                                       */
+/* -------------------------------------------------------------------------- */
 
-  border-color: rgba(116, 133, 144, 0.14);
+.regiment-stratagem-code {
+  margin: 11px 0;
+
+  padding: 9px 10px;
+
+  background:
+    rgba(0, 0, 0, 0.2);
+
+  border:
+    1px solid rgba(116, 133, 144, 0.13);
+}
+
+.regiment-stratagem-code-label {
+  margin-bottom: 7px;
+
+  color: #53626b;
+
+  font-size: 7px;
+  font-weight: 700;
+
+  letter-spacing: 1.1px;
+}
+
+.regiment-stratagem-code-sequence {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 4px;
+}
+
+.regiment-stratagem-code-key {
+  width: 24px;
+  height: 24px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #0a1014;
+
+  border:
+    1px solid rgba(244, 185, 66, 0.24);
+
+  color: var(--regiment-yellow);
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+
+/* -------------------------------------------------------------------------- */
+/* SHIP MODULE                                                                */
+/* -------------------------------------------------------------------------- */
+
+.regiment-stratagem-source {
+  display: flex;
+
+  justify-content: space-between;
+
+  gap: 12px;
+
+  margin-top: 10px;
+  padding-top: 9px;
+
+  border-top:
+    1px solid rgba(116, 133, 144, 0.1);
+}
+
+.regiment-stratagem-source span {
+  color: #4f5d65;
+
+  font-size: 7px;
+  font-weight: 700;
+
+  letter-spacing: 1px;
+}
+
+.regiment-stratagem-source strong {
+  color: #89949a;
+
+  font-size: 8px;
+  font-weight: 700;
+
+  letter-spacing: 0.5px;
+
+  text-align: right;
 }

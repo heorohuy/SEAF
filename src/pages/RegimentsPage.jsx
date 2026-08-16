@@ -20,6 +20,7 @@ import {
   getStratagemCatalog,
   getStratagemDescription,
   findStratagem,
+  clearStratagemCache,
 } from "../api/stratagems.js";
 
 import "./RegimentsPage.css";
@@ -679,11 +680,15 @@ function getStratagemInfoFallback(
   return {
     name,
 
-    type: null,
+    type:
+      category ||
+      "STRATAGEM",
 
     permitType: null,
 
-    stratagemType: null,
+    stratagemType:
+      category ||
+      null,
 
     source: null,
 
@@ -703,9 +708,15 @@ function getStratagemInfoFallback(
 
     codeDisplay: "",
 
-    wikiUrl: null,
+    wikiUrl:
+      name
+        ? `https://helldivers.wiki.gg/wiki/${encodeURIComponent(
+          name.replace(/ /g, "_")
+        )}`
+        : null,
   };
 }
+
 
 
 /*
@@ -844,121 +855,114 @@ function StratagemButton({
               </span>
             )}
 
-            {info.type && (
-              <span>
-                TYPE: {info.type}
-              </span>
-            )}
-
             {info.permitType && (
               <span>
                 PERMIT: {info.permitType}
               </span>
             )}
+
+            {info.stratagemType && (
+              <span>
+                TYPE: {info.stratagemType}
+              </span>
+            )}
           </div>
 
+          <div className="regiment-stratagem-stats">
+            {info.uses && (
+              <div className="regiment-stratagem-stat">
+                <span>USES</span>
 
-          {info.code?.length >
-            0 && (
-              <div className="regiment-stratagem-code">
-                <div className="regiment-stratagem-code-label">
-                  STRATAGEM CODE
-                </div>
-
-                <div className="regiment-stratagem-code-sequence">
-                  {info.code.map(
-                    (
-                      direction,
-                      index
-                    ) => (
-                      <span
-                        key={`${direction}-${index}`}
-                        className="regiment-stratagem-code-key"
-                        title={
-                          direction
-                        }
-                      >
-                        {getDirectionSymbol(
-                          direction
-                        )}
-                      </span>
-                    )
-                  )}
-                </div>
+                <strong>
+                  {info.uses}
+                </strong>
               </div>
             )}
 
-          <div className="regiment-stratagem-stats">
-            {info.cooldown && (
+            {info.callInTime && (
               <div className="regiment-stratagem-stat">
-                <span>
-                  COOLDOWN
-                </span>
+                <span>CALL-IN</span>
 
                 <strong>
-                  {
-                    info.cooldown
-                  }
+                  {info.callInTime}
+                </strong>
+              </div>
+            )}
+
+            {info.cooldown && (
+              <div className="regiment-stratagem-stat">
+                <span>COOLDOWN</span>
+
+                <strong>
+                  {info.cooldown}
                 </strong>
               </div>
             )}
 
             {info.unlockLevel && (
               <div className="regiment-stratagem-stat">
-                <span>
-                  UNLOCK
-                </span>
+                <span>UNLOCK</span>
 
                 <strong>
-                  {
-                    info.unlockLevel
-                  }
+                  LEVEL {info.unlockLevel}
                 </strong>
               </div>
             )}
 
             {info.unlockCost && (
               <div className="regiment-stratagem-stat">
-                <span>
-                  COST
-                </span>
-
-                <strong>
-                  {
-                    info.unlockCost
-                  }
-                </strong>
-              </div>
-            )}
-
-            {info.unlockCost && (
-              <div className="regiment-stratagem-stat">
-                <span>
-                  COST
-                </span>
+                <span>COST</span>
 
                 <strong>
                   {info.unlockCost}
                 </strong>
               </div>
             )}
-
           </div>
 
-          {info.traits?.length >
-            0 && (
-              <div className="regiment-stratagem-traits">
+          {info.traits?.length > 0 && (
+            <div className="regiment-stratagem-traits">
+              <div className="regiment-stratagem-section-label">
+                STRATAGEM TRAITS
+              </div>
+
+              <div className="regiment-stratagem-traits-list">
                 {info.traits.map(
-                  (trait) => (
+                  (trait, index) => (
                     <span
-                      key={trait}
+                      key={`${trait}-${index}`}
                     >
                       {trait}
                     </span>
                   )
                 )}
               </div>
-            )}
+            </div>
+          )}
+
+          {info.code?.length > 0 && (
+            <div className="regiment-stratagem-code">
+              <div className="regiment-stratagem-code-label">
+                STRATAGEM CODE
+              </div>
+
+              <div className="regiment-stratagem-code-sequence">
+                {info.code.map(
+                  (direction, index) => (
+                    <span
+                      key={`${direction}-${index}`}
+                      className="regiment-stratagem-code-key"
+                      title={direction}
+                    >
+                      {getDirectionSymbol(
+                        direction
+                      )}
+                    </span>
+                  )
+                )}
+              </div>
+            </div>
+          )}
 
           {(info.source ||
             info.shipModule) && (
@@ -973,6 +977,7 @@ function StratagemButton({
                 </strong>
               </div>
             )}
+
 
           <div className="regiment-stratagem-description">
             {descriptionLoading ? (
@@ -1207,6 +1212,38 @@ export default function RegimentsPage() {
     }
   }
 
+  async function handleClearCache() {
+    try {
+      /*
+       * Clear the stratagem catalog and description caches.
+       */
+      clearStratagemCache();
+
+      /*
+       * Clear the currently displayed metadata so the UI
+       * does not temporarily show stale information.
+       */
+      setStratagemCatalog([]);
+      setStratagemCatalogError(null);
+
+      /*
+       * Re-fetch the catalog immediately.
+       */
+      const catalog =
+        await getStratagemCatalog();
+
+      setStratagemCatalog(catalog);
+    } catch (err) {
+      console.warn(
+        "Failed to reload stratagem catalog after cache clear:",
+        err
+      );
+
+      setStratagemCatalogError(err);
+    }
+  }
+
+
   useEffect(() => {
     loadData();
   }, []);
@@ -1391,9 +1428,7 @@ export default function RegimentsPage() {
               placeholder="SEARCH LOADOUTS..."
               value={search}
               onChange={(event) =>
-                setSearch(
-                  event.target.value
-                )
+                setSearch(event.target.value)
               }
             />
           </div>
@@ -1401,9 +1436,7 @@ export default function RegimentsPage() {
           <button
             type="button"
             className="regiments-refresh"
-            onClick={
-              loadData
-            }
+            onClick={loadData}
             disabled={loading}
           >
             <RefreshCw
@@ -1417,7 +1450,16 @@ export default function RegimentsPage() {
 
             REFRESH
           </button>
+
+          <button
+            type="button"
+            className="regiments-cache-clear"
+            onClick={handleClearCache}
+          >
+            CLEAR DATA CACHE
+          </button>
         </section>
+
 
         {!loading && (
           <div className="regiments-catalog-status">

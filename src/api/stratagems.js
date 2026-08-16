@@ -11,58 +11,37 @@ let catalogPromise = null;
 
 const descriptionCache = new Map();
 
-/*
- * ---------------------------------------------------------------------------
- * NAME NORMALIZATION
- * ---------------------------------------------------------------------------
- */
-
 const NAME_ALIASES = {
   "B-1 Supply Pack": "B-1 Supply Pack",
 
   "AC-8 Autocannon": "AC-8 Autocannon",
-  Autocannon: "AC-8 Autocannon",
 
   "GR-8 Recoilless Rifle":
     "GR-8 Recoilless Rifle",
-  "Recoilless Rifle":
-    "GR-8 Recoilless Rifle",
 
-  "FAF-14 Spear": "FAF-14 Spear",
-  Spear: "FAF-14 Spear",
+  "FAF-14 Spear":
+    "FAF-14 Spear",
 
   "Orbital 120 HE Barrage":
     "Orbital 120MM HE Barrage",
 
   "Eagle 500KG":
-    "Eagle 500kg Bomb",
-
-  "Eagle 500KG Bomb":
-    "Eagle 500kg Bomb",
+    "Eagle 500KG Bomb",
 
   "M-102 Fast Recon Vehicle":
-    "M-102 Fast Recon Vehicle",
-
-  "Fast Recon Vehicle":
     "M-102 Fast Recon Vehicle",
 
   "M-103 Supply FRV":
     "M-103 Supply FRV",
 
-  "Supply FRV":
-    "M-103 Supply FRV",
-
   "M-104 Incinerator FRV":
     "M-104 Incinerator FRV",
 
-  "Incendiary FRV":
-    "M-104 Incinerator FRV",
-
   "TD-220 Bastion":
-    "TD-220 Bastion",
+    "TD-220 Bastion MK XVI",
 
-  "TD-220 Bastion MK XVI":
-    "TD-220 Bastion",
+  "Ballistic Shield":
+    "Ballistic Shield Backpack",
 };
 
 function clean(value) {
@@ -80,31 +59,6 @@ function normalizeName(name) {
   );
 }
 
-/*
- * This is used for matching only.
- *
- * Examples:
- *
- * "B-1 Supply Pack"
- * "b 1 supply pack"
- * "B-1  Supply Pack"
- *
- * all become the same lookup key.
- */
-function lookupKey(name) {
-  return normalizeName(name)
-    .toLowerCase()
-    .replace(/&/g, "and")
-    .replace(/[^a-z0-9]+/g, "")
-    .trim();
-}
-
-/*
- * ---------------------------------------------------------------------------
- * STRATAGEM CODE
- * ---------------------------------------------------------------------------
- */
-
 function parseCode(value) {
   if (!value) {
     return [];
@@ -121,10 +75,9 @@ function parseCode(value) {
     .replace(/←/g, " left ")
     .replace(/→/g, " right ");
 
-  const matches =
-    text.match(
-      /\b(up|down|left|right)\b/gi
-    );
+  const matches = text.match(
+    /\b(up|down|left|right)\b/gi
+  );
 
   return matches
     ? matches.map((item) =>
@@ -133,30 +86,23 @@ function parseCode(value) {
     : [];
 }
 
-/*
- * ---------------------------------------------------------------------------
- * TRAITS
- * ---------------------------------------------------------------------------
- */
-
 function parseTraits(value) {
   if (!value) {
     return [];
   }
 
+  if (Array.isArray(value)) {
+    return value
+      .map(clean)
+      .filter(Boolean);
+  }
+
   return String(value)
     .replace(/<[^>]*>/g, "")
-    .replace(/\{\{[^}]*\}\}/g, "")
-    .split(/[,;•]/)
-    .map((item) => clean(item))
+    .split(/[,;•|]/)
+    .map(clean)
     .filter(Boolean);
 }
-
-/*
- * ---------------------------------------------------------------------------
- * COOLDOWN
- * ---------------------------------------------------------------------------
- */
 
 function formatCooldown(value) {
   if (
@@ -167,18 +113,12 @@ function formatCooldown(value) {
     return null;
   }
 
-  const raw = clean(value);
-
-  if (!raw) {
-    return null;
-  }
-
   const number = Number(
-    raw.replace(/[^\d.]/g, "")
+    String(value).replace(/[^\d.]/g, "")
   );
 
   if (!Number.isFinite(number)) {
-    return raw;
+    return clean(value);
   }
 
   if (number >= 60) {
@@ -187,28 +127,66 @@ function formatCooldown(value) {
     if (Number.isInteger(minutes)) {
       return `${minutes}m`;
     }
-
-    return `${minutes.toFixed(1)}m`;
   }
 
   return `${number}s`;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * CARGO ROW NORMALIZATION
- * ---------------------------------------------------------------------------
- *
- * Cargo API returns:
- *
- * {
- *   title: {
- *     title: "...",
- *     permit_type: "...",
- *     ...
- *   }
- * }
- */
+function formatUses(value) {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return null;
+  }
+
+  const normalized = clean(value);
+
+  if (
+    normalized === "4294967295" ||
+    normalized === "-1" ||
+    normalized.toLowerCase() ===
+      "unlimited"
+  ) {
+    return "Unlimited";
+  }
+
+  return normalized;
+}
+
+function formatCallInTime(value) {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return null;
+  }
+
+  const number = Number(
+    String(value).replace(/[^\d.]/g, "")
+  );
+
+  if (!Number.isFinite(number)) {
+    return clean(value);
+  }
+
+  return `${number}s`;
+}
+
+function getWikiUrl(name) {
+  if (!name) {
+    return null;
+  }
+
+  return (
+    "https://helldivers.wiki.gg/wiki/" +
+    encodeURIComponent(
+      name.replace(/ /g, "_")
+    )
+  );
+}
 
 function normalizeEntry(row) {
   const data =
@@ -216,84 +194,108 @@ function normalizeEntry(row) {
 
   const name = clean(
     data.title ||
-    data.name ||
-    data._pageName ||
-    data.page ||
-    data.page_name
+      data.name ||
+      data._pageName
   );
 
-  if (!name) {
-    return null;
-  }
+  const permitType =
+    clean(
+      data.permit_type ||
+        data.permit ||
+        data.category
+    ) || null;
 
-  const canonicalName =
-    normalizeName(name);
+  const stratagemType =
+    clean(
+      data.stratagem_type ||
+        data.type
+    ) || null;
+
+  const source =
+    clean(data.source) || null;
+
+  const cooldown =
+    formatCooldown(
+      data.base_cooldown ??
+        data.cooldown
+    );
+
+  const callInTime =
+    formatCallInTime(
+      data.call_in_time ??
+        data.callin_time ??
+        data.call_in
+    );
+
+  const uses =
+    formatUses(data.uses);
+
+  const traits =
+    parseTraits(data.traits);
+
+  const code =
+    parseCode(
+      data.stratagem_code ??
+        data.code
+    );
 
   return {
     name,
 
-    canonicalName,
-
     lookupName:
-      canonicalName,
+      normalizeName(name),
 
-    lookupKey:
-      lookupKey(canonicalName),
+    permitType,
 
-    permitType:
-      clean(data.permit_type) ||
-      null,
+    stratagemType,
 
+    /*
+     * Keep "type" for backwards compatibility
+     * with the existing UI.
+     */
     type:
-      clean(
-        data.stratagem_type ||
-        data.type
-      ) ||
+      stratagemType ||
+      permitType ||
       null,
 
-    source:
-      clean(
-        data.source ||
-        data.ship_module
-      ) ||
-      null,
+    source,
 
     unlockLevel:
-      clean(data.unlock_level) ||
-      null,
+      clean(
+        data.unlock_level
+      ) || null,
 
     unlockCost:
-      clean(data.unlock_cost) ||
-      null,
+      clean(
+        data.unlock_cost
+      ) || null,
 
-    cooldown:
-      formatCooldown(
-        data.base_cooldown ||
-        data.cooldown
-      ),
+    cooldown,
 
-    traits:
-      parseTraits(data.traits),
+    callInTime,
 
-    code:
-      parseCode(
-        data.stratagem_code
-      ),
+    uses,
+
+    traits,
+
+    code,
+
+    codeDisplay:
+      code.join(" "),
 
     wikiUrl:
-      `https://helldivers.wiki.gg/wiki/${encodeURIComponent(
-        name.replace(/ /g, "_")
-      )}`,
+      getWikiUrl(name),
   };
 }
 
-/*
- * ---------------------------------------------------------------------------
- * CATALOG FETCH
- * ---------------------------------------------------------------------------
- */
-
 async function fetchCatalog() {
+  /*
+   * These are the useful fields exposed by the
+   * Helldivers Wiki Stratagems Cargo table.
+   *
+   * The extra aliases are harmless if the wiki
+   * does not populate them.
+   */
   const fields = [
     "title",
     "permit_type",
@@ -304,6 +306,8 @@ async function fetchCatalog() {
     "stratagem_code",
     "stratagem_type",
     "base_cooldown",
+    "call_in_time",
+    "uses",
   ].join(",");
 
   const params =
@@ -316,15 +320,10 @@ async function fetchCatalog() {
       origin: "*",
     });
 
-  const url =
-    `${API_URL}?${params.toString()}`;
-
-  console.log(
-    "[SEAF] Loading stratagem catalog..."
-  );
-
   const response =
-    await fetch(url);
+    await fetch(
+      `${API_URL}?${params.toString()}`
+    );
 
   if (!response.ok) {
     throw new Error(
@@ -334,13 +333,6 @@ async function fetchCatalog() {
 
   const json =
     await response.json();
-
-  if (json?.error) {
-    throw new Error(
-      json.error.info ||
-      "Cargo API returned an error"
-    );
-  }
 
   if (
     !Array.isArray(
@@ -352,35 +344,12 @@ async function fetchCatalog() {
     );
   }
 
-  const catalog =
-    json.cargoquery
-      .map(normalizeEntry)
-      .filter(Boolean);
-
-  /*
-   * IMPORTANT:
-   *
-   * Never consider an empty catalog
-   * a successful catalog request.
-   */
-  if (catalog.length === 0) {
-    throw new Error(
-      "Stratagem catalog returned zero usable entries"
+  return json.cargoquery
+    .map(normalizeEntry)
+    .filter(
+      (item) => item.name
     );
-  }
-
-  console.log(
-    `[SEAF] Loaded ${catalog.length} stratagem records`
-  );
-
-  return catalog;
 }
-
-/*
- * ---------------------------------------------------------------------------
- * CACHE
- * ---------------------------------------------------------------------------
- */
 
 function readCache() {
   try {
@@ -403,17 +372,6 @@ function readCache() {
       return null;
     }
 
-    /*
-     * Empty caches are invalid.
-     */
-    if (cached.data.length === 0) {
-      localStorage.removeItem(
-        CACHE_KEY
-      );
-
-      return null;
-    }
-
     if (
       Date.now() -
         cached.timestamp >
@@ -429,16 +387,6 @@ function readCache() {
 }
 
 function writeCache(data) {
-  /*
-   * Never cache an empty catalog.
-   */
-  if (
-    !Array.isArray(data) ||
-    data.length === 0
-  ) {
-    return;
-  }
-
   try {
     localStorage.setItem(
       CACHE_KEY,
@@ -448,15 +396,9 @@ function writeCache(data) {
       })
     );
   } catch {
-    // Cache failure must never break the page.
+    // Cache failures must never break the page.
   }
 }
-
-/*
- * ---------------------------------------------------------------------------
- * PUBLIC CATALOG API
- * ---------------------------------------------------------------------------
- */
 
 export async function getStratagemCatalog() {
   if (catalogPromise) {
@@ -466,11 +408,7 @@ export async function getStratagemCatalog() {
   const cached =
     readCache();
 
-  if (cached?.length) {
-    console.log(
-      `[SEAF] Using cached stratagem catalog (${cached.length})`
-    );
-
+  if (cached) {
     return cached;
   }
 
@@ -478,35 +416,21 @@ export async function getStratagemCatalog() {
     fetchCatalog()
       .then((catalog) => {
         writeCache(catalog);
-
         return catalog;
       })
       .catch((error) => {
         catalogPromise = null;
 
         console.warn(
-          "[SEAF] Unable to load stratagem catalog:",
+          "Unable to load stratagem catalog:",
           error
         );
 
-        /*
-         * Metadata failure must NOT prevent
-         * RegimentsPage from rendering.
-         */
         return [];
       });
 
   return catalogPromise;
 }
-
-/*
- * ---------------------------------------------------------------------------
- * STRATAGEM LOOKUP
- * ---------------------------------------------------------------------------
- *
- * This is exported so RegimentsPage does not need
- * to perform fragile .find() logic itself.
- */
 
 export function findStratagem(
   catalog,
@@ -514,33 +438,39 @@ export function findStratagem(
 ) {
   if (
     !Array.isArray(catalog) ||
-    !catalog.length ||
     !name
   ) {
     return null;
   }
 
-  const key =
-    lookupKey(name);
+  const requested =
+    clean(name);
+
+  const normalized =
+    normalizeName(requested);
 
   return (
     catalog.find(
       (item) =>
-        item.lookupKey === key
+        clean(item.name)
+          .toLowerCase() ===
+        requested.toLowerCase()
     ) ||
     catalog.find(
       (item) =>
-        lookupKey(item.name) === key
+        clean(item.lookupName)
+          .toLowerCase() ===
+        requested.toLowerCase()
+    ) ||
+    catalog.find(
+      (item) =>
+        clean(item.name)
+          .toLowerCase() ===
+        normalized.toLowerCase()
     ) ||
     null
   );
 }
-
-/*
- * ---------------------------------------------------------------------------
- * DESCRIPTION
- * ---------------------------------------------------------------------------
- */
 
 export async function getStratagemDescription(
   name
@@ -548,13 +478,14 @@ export async function getStratagemDescription(
   const pageName =
     normalizeName(name);
 
-  const key =
-    lookupKey(pageName);
-
   if (
-    descriptionCache.has(key)
+    descriptionCache.has(
+      pageName
+    )
   ) {
-    return descriptionCache.get(key);
+    return descriptionCache.get(
+      pageName
+    );
   }
 
   const params =
@@ -589,21 +520,42 @@ export async function getStratagemDescription(
       Object.values(pages)[0];
 
     const description =
-      clean(page?.extract) ||
+      page?.extract?.trim() ||
       null;
 
     descriptionCache.set(
-      key,
+      pageName,
       description
     );
 
     return description;
   } catch (error) {
     console.warn(
-      "[SEAF] Unable to load stratagem description:",
+      "Unable to load stratagem description:",
       error
     );
 
     return null;
   }
+}
+
+export function clearStratagemCache() {
+  try {
+    localStorage.removeItem(CACHE_KEY);
+  } catch {
+    // Cache clearing should never break the page.
+  }
+
+  /*
+   * Clear the in-memory request cache as well.
+   *
+   * This is important because removing localStorage alone
+   * would still allow an existing catalogPromise to be reused.
+   */
+  catalogPromise = null;
+
+  /*
+   * Descriptions are cached separately in memory.
+   */
+  descriptionCache.clear();
 }
