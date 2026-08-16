@@ -63,7 +63,6 @@
 
 .navigation-menu-panel {
   position: fixed;
-
   top: 0;
   right: 0;
 
@@ -119,7 +118,7 @@
 
   color: #687782;
 
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-scale));
   font-weight: 700;
 
   letter-spacing: 2px;
@@ -127,8 +126,7 @@
 
 .navigation-menu-title {
   color: #e0e5e8;
-
-  font-size: 17px;
+  font-size: calc(17px * var(--ui-scale));
   font-weight: 700;
 
   letter-spacing: 3px;
@@ -176,7 +174,7 @@
 
   color: #53616b;
 
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-scale));
   font-weight: 700;
 
   letter-spacing: 2px;
@@ -191,7 +189,6 @@
 
 .navigation-menu-link {
   position: relative;
-
   display: flex;
   align-items: center;
 
@@ -221,7 +218,6 @@
 
 .navigation-menu-link--active {
   color: #f4b942;
-
   background:
     linear-gradient(
       90deg,
@@ -265,7 +261,7 @@
 }
 
 .navigation-menu-link-content strong {
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-scale));
   font-weight: 700;
 
   letter-spacing: 1.5px;
@@ -274,7 +270,7 @@
 .navigation-menu-link-content small {
   color: #58656e;
 
-  font-size: 8px;
+  font-size: calc(8px * var(--ui-scale));
   font-weight: 600;
 
   letter-spacing: 1.5px;
@@ -289,12 +285,11 @@
   margin-top: auto;
 
   padding: 16px 8px 5px;
-
   border-top: 1px solid rgba(129, 144, 156, 0.12);
 
   color: #46535c;
 
-  font-size: 7px;
+  font-size: calc(7px * var(--ui-scale));
   line-height: 1.8;
 
   letter-spacing: 1.2px;

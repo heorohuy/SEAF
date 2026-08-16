@@ -2,10 +2,6 @@
   box-sizing: border-box;
 }
 
-:root {
-  --ui-scale: 1.4;
-}
-
 html,
 body,
 #root {

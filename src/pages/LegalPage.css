@@ -38,14 +38,14 @@
 
 .legal-header-title span {
   color: #e6ebef;
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-scale));
   font-weight: 700;
   letter-spacing: 2.5px;
 }
 
 .legal-header-title small {
   color: #66737d;
-  font-size: 8px;
+  font-size: calc(8px * var(--ui-scale));
   font-weight: 700;
   letter-spacing: 2px;
 }
@@ -58,7 +58,7 @@
   margin-right: 64px;
 
   color: #66737d;
-  font-size: 8px;
+  font-size: calc(8px * var(--ui-scale));
   font-weight: 700;
   letter-spacing: 1.8px;
 }
@@ -82,7 +82,7 @@
   margin-bottom: 14px;
 
   color: #65737e;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-scale));
   font-weight: 700;
   letter-spacing: 2.4px;
 }
@@ -101,7 +101,7 @@
   max-width: 760px;
 
   color: #8996a0;
-  font-size: 15px;
+  font-size: calc(15px * var(--ui-scale));
   line-height: 1.8;
 }
 
@@ -113,7 +113,7 @@
   margin-top: 24px;
 
   color: #596670;
-  font-size: 8px;
+  font-size: calc(8px * var(--ui-scale));
   font-weight: 700;
   letter-spacing: 1.7px;
 }
@@ -132,7 +132,7 @@
   margin: 0 0 18px;
 
   color: #f4b942;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-scale));
   font-weight: 700;
   letter-spacing: 2px;
 }
@@ -144,7 +144,7 @@
 
   color: #9aa6af;
   font-family: Inter, Arial, Helvetica, sans-serif;
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-scale));
   line-height: 1.9;
 }
 
@@ -170,14 +170,14 @@
 
 .legal-list strong {
   color: #dfe5e9;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-scale));
   letter-spacing: 1.4px;
 }
 
 .legal-list span {
   color: #87949e;
   font-family: Inter, Arial, Helvetica, sans-serif;
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-scale));
   line-height: 1.7;
 }
 
@@ -201,21 +201,21 @@
 
 .legal-contact-box span {
   color: #8b733f;
-  font-size: 8px;
+  font-size: calc(8px * var(--ui-scale));
   font-weight: 700;
   letter-spacing: 1.8px;
 }
 
 .legal-contact-box strong {
   color: #e2e8ec;
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-scale));
   letter-spacing: 1px;
 }
 
 .legal-contact-box small {
   color: #78858f;
   font-family: Inter, Arial, Helvetica, sans-serif;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-scale));
   line-height: 1.7;
 }
 
@@ -234,13 +234,13 @@
 
 .legal-final strong {
   color: #f4b942;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-scale));
   letter-spacing: 1.8px;
 }
 
 .legal-final span {
   color: #596670;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-scale));
   letter-spacing: 1px;
   text-align: right;
 }
@@ -261,11 +261,11 @@
   }
 
   .legal-hero h1 {
-    font-size: 31px;
+    font-size: calc(31px * var(--ui-scale));
   }
 
   .legal-hero > p {
-    font-size: 14px;
+    font-size: calc(14px * var(--ui-scale));
   }
 
   .legal-section {
