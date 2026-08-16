@@ -355,7 +355,7 @@ export default function GuidePage() {
             </div>
 
             <h1>
-              HOW TO USE S.E.A.F.
+              HOW TO USE S.E.A.F. L.E.M.O.N.
             </h1>
 
             <p>
