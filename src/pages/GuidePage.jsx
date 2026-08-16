@@ -20,7 +20,7 @@ const guideSections = [
     icon: BookOpen,
     title: "GETTING STARTED",
     intro:
-      "S.E.A.F. is a simple reference tool for finding information about the current galactic war, planets, deployed forces, and regiment equipment.",
+      "S.E.A.F. L.E.M.O.N. is a simple reference tool for finding information about the current galactic war from the perspective of the Sicaris S.E.A.F., planets, deployed forces, and regiment equipment.",
     items: [
       {
         title: "Open the navigation menu",
@@ -79,9 +79,9 @@ const guideSections = [
           "If regiments are deployed on the selected planet, their icons will appear in the planet panel. Select a regiment to see its specialty, FDP, surplus, and Warbonds.",
       },
       {
-        title: "Watch for live events",
+        title: "Watch for SOS Callouts",
         text:
-          "A planet may also display a LIVE EVENT section when an event is associated with it.",
+          "A planet may also display a SOS Callouts when a regiment is in need of support.",
       },
     ],
   },
@@ -148,7 +148,7 @@ const guideSections = [
       {
         title: "Read the slots",
         text:
-          "Each regiment is divided into numbered slots. Every slot represents an equipment or stratagem category.",
+          "Each regiment is divided into numbered slots. Every slot represents an equipment or stratagem a S.E.A.F. Trooper is authorized to take on a mission.",
       },
       {
         title: "Select a stratagem",
@@ -194,7 +194,7 @@ const guideSections = [
     icon: RefreshCw,
     title: "KEEPING INFORMATION UP TO DATE",
     intro:
-      "Most information on S.E.A.F. comes from external data sources, so the site may need a moment to synchronize before displaying the latest information.",
+      "Most information on S.E.A.F. L.E.M.O.N. comes from external data sources, so the site may need a moment to synchronize before displaying the latest information.",
     items: [
       {
         title: "What does SYNCING mean?",
