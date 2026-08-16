@@ -8,6 +8,18 @@ export default function Planet({
   hasSOS,
   onSelect
 }) {
+  /*
+   * Planet label starts to the right of the planet.
+   *
+   * When an FOB exists, the FOB occupies the space immediately
+   * before the planet name.
+   */
+  const labelX = planet.x + 4;
+  const labelY = planet.y + 1.2;
+
+  const factoryX = planet.x + 2.8;
+  const factoryY = planet.y - 9;
+
   return (
     <g
       key={planet.id}
@@ -26,56 +38,56 @@ export default function Planet({
       }}
     >
       {hasSOS && (
-  <>
-    <circle
-      className="sos-pulse"
-      cx={planet.x}
-      cy={planet.y}
-      r="2.5"
-    >
-      <animate
-        attributeName="r"
-        from="2.5"
-        to="12"
-        dur="1.8s"
-        repeatCount="indefinite"
-      />
+        <>
+          <circle
+            className="sos-pulse"
+            cx={planet.x}
+            cy={planet.y}
+            r="2.5"
+          >
+            <animate
+              attributeName="r"
+              from="2.5"
+              to="12"
+              dur="1.8s"
+              repeatCount="indefinite"
+            />
 
-      <animate
-        attributeName="opacity"
-        values="0.9;0.45;0"
-        dur="1.8s"
-        repeatCount="indefinite"
-      />
-    </circle>
+            <animate
+              attributeName="opacity"
+              values="0.9;0.45;0"
+              dur="1.8s"
+              repeatCount="indefinite"
+            />
+          </circle>
 
-    <circle
-      className="sos-pulse"
-      cx={planet.x}
-      cy={planet.y}
-      r="2.5"
-    >
-      <animate
-        attributeName="r"
-        from="2.5"
-        to="12"
-        dur="1.8s"
-        begin="0.9s"
-        repeatCount="indefinite"
-      />
+          <circle
+            className="sos-pulse"
+            cx={planet.x}
+            cy={planet.y}
+            r="2.5"
+          >
+            <animate
+              attributeName="r"
+              from="2.5"
+              to="12"
+              dur="1.8s"
+              begin="0.9s"
+              repeatCount="indefinite"
+            />
 
-      <animate
-        attributeName="opacity"
-        values="0.9;0.45;0"
-        dur="1.8s"
-        begin="0.9s"
-        repeatCount="indefinite"
-      />
-    </circle>
-  </>
-)}
+            <animate
+              attributeName="opacity"
+              values="0.9;0.45;0"
+              dur="1.8s"
+              begin="0.9s"
+              repeatCount="indefinite"
+            />
+          </circle>
+        </>
+      )}
 
-
+      {/* Planet glow */}
       <circle
         className="planet-glow"
         cx={planet.x}
@@ -83,6 +95,7 @@ export default function Planet({
         r="3.2"
       />
 
+      {/* Planet itself */}
       <circle
         className="planet-circle"
         cx={planet.x}
@@ -90,26 +103,37 @@ export default function Planet({
         r="1.4"
       />
 
-      <text
-        className="planet-label"
-        x={planet.x + 2.8}
-        y={planet.y + 1.2}
-      >
-        {planet.name}
-      </text>
-
+      {/* =========================================================
+          FOB
+          Sits immediately to the left of the planet name.
+      ========================================================== */}
       {hasAssociatedMatch && (
         <image
           className="factory-icon"
           href={factoryIcon}
-          x={planet.x + 2.8}
-          y={planet.y - 6}
-          width="6"
+          x={factoryX}
+          y={factoryY}
+          width="5"
           height="5"
           preserveAspectRatio="xMidYMid meet"
         />
       )}
 
+      {/* =========================================================
+          PLANET NAME
+      ========================================================== */}
+      <text
+        className="planet-label"
+        x={labelX}
+        y={labelY}
+      >
+        {planet.name}
+      </text>
+
+      {/* =========================================================
+          REGIMENT ICON
+          Remains below the planet/name.
+      ========================================================== */}
       {associatedRegimentIcon && (
         <image
           className="regiment-icon"

@@ -128,6 +128,11 @@ export default function Map({
           </clipPath>
         </defs>
 
+        {/* =========================================================
+            MAP GEOMETRY
+            Sector boxes and connection lines stay inside the
+            circular galaxy boundary.
+        ========================================================== */}
         <g clipPath="url(#galaxy-mask)">
           <circle
             cx="480"
@@ -136,10 +141,13 @@ export default function Map({
             fill="rgba(8, 12, 18, 0.95)"
           />
 
-          {flippedSectors.map((s) => (
+          {flippedSectors.map((sector) => (
             <Sector
-              key={s.id}
-              sector={s}
+              key={sector.id}
+              sector={sector}
+              planets={flippedPlanets}
+              showBox={true}
+              showLabel={false}
             />
           ))}
 
@@ -165,7 +173,32 @@ export default function Map({
               />
             );
           })}
+        </g>
 
+        {/* =========================================================
+            SECTOR LABELS
+            These are not clipped. Sector.jsx keeps the label
+            inside the sector and inside the galaxy circle.
+        ========================================================== */}
+        <g>
+          {flippedSectors.map((sector) => (
+            <Sector
+              key={`label-${sector.id}`}
+              sector={sector}
+              planets={flippedPlanets}
+              galaxyRadius={galaxyRadius}
+              showBox={false}
+              showLabel={true}
+            />
+          ))}
+        </g>
+
+        {/* =========================================================
+            PLANETS
+            Planets and their labels are outside the circular clip
+            so labels at the map edge are not cut off.
+        ========================================================== */}
+        <g>
           {flippedPlanets.map((planet) => {
             const planetNameKey = normalizeKey(
               planet.name
@@ -183,6 +216,14 @@ export default function Map({
               sosLocations?.has(planetNameKey) ||
               sosLocations?.has(planetIdKey);
 
+            const hasAssociatedMatch =
+              associatedFobKeys.has(
+                planetNameKey
+              ) ||
+              associatedFobKeys.has(
+                planetIdKey
+              );
+
             return (
               <Planet
                 key={planet.id}
@@ -191,12 +232,7 @@ export default function Map({
                   selectedPlanet?.id === planet.id
                 }
                 hasAssociatedMatch={
-                  associatedFobKeys.has(
-                    planetNameKey
-                  ) ||
-                  associatedFobKeys.has(
-                    planetIdKey
-                  )
+                  hasAssociatedMatch
                 }
                 associatedRegimentIcon={
                   associatedRegimentIcon
