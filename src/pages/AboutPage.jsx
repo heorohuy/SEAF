@@ -1,6 +1,8 @@
 import NavigationMenu from "../components/NavigationMenu";
 import "./LegalPage.css";
 import SiteFooter from "../components/SiteFooter";
+import ContactForm from "../components/ContactForm";
+
 
 
 export default function AboutPage() {
@@ -134,8 +136,30 @@ export default function AboutPage() {
           </p>
         </section>
 
+        <section
+          id="contact"
+          className="legal-section"
+        >
+          <h2>05 // CONTACT &amp; CORRECTIONS</h2>
+
+          <p>
+            Have a question, found incorrect information, or
+            encountered a problem with S.E.A.F. L.E.M.O.N.? Send
+            a message using the contact system below.
+          </p>
+
+          <p>
+            When reporting incorrect information, please include
+            the affected planet, regiment, page, or other relevant
+            details so the issue can be identified quickly.
+          </p>
+
+          <ContactForm />
+        </section>
+
+
         <section className="legal-section">
-          <h2>05 // PROJECT PURPOSE</h2>
+          <h2>06 // PROJECT PURPOSE</h2>
 
           <p>
             This project exists to provide players with a convenient
