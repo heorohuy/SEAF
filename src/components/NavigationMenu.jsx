@@ -7,7 +7,9 @@ import {
   Database,
   Shield,
   Ship,
-} from 'lucide-react';
+  BookOpen,
+} from "lucide-react";
+
 
 
 
@@ -186,6 +188,36 @@ export default function NavigationMenu() {
               </span>
             </NavLink> */}
           </nav>
+
+          <div className="navigation-menu-section-label">
+            HELP &amp; REFERENCE
+          </div>
+
+          <nav className="navigation-menu-links">
+            <NavLink
+              to="/guide"
+              className={({ isActive }) =>
+                `navigation-menu-link ${isActive
+                  ? "navigation-menu-link--active"
+                  : ""
+                }`
+              }
+              onClick={closeMenu}
+            >
+              <span className="navigation-menu-link-icon">
+                <BookOpen size={19} />
+              </span>
+
+              <span className="navigation-menu-link-content">
+                <strong>SITE GUIDE</strong>
+
+                <small>
+                  HOW TO USE S.E.A.F.
+                </small>
+              </span>
+            </NavLink>
+          </nav>
+
 
           <div className="navigation-menu-footer">
             <div>SUPER EARTH ARMED FORCES</div>

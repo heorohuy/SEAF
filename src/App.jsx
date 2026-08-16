@@ -4,6 +4,7 @@ import MapApp from './MapApp.jsx';
 import PlanetsPage from './pages/PlanetsPage.jsx';
 import RegimentsPage from './pages/RegimentsPage.jsx';
 import ShipsPage from './pages/ShipsPage.jsx';
+import GuidePage from "./pages/GuidePage.jsx";
 
 export default function App() {
   return (
@@ -32,6 +33,12 @@ export default function App() {
         path="*"
         element={<MapApp />}
       />
+
+      <Route
+        path="/guide"
+        element={<GuidePage />}
+      />
+
     </Routes>
   );
 }
