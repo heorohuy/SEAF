@@ -1,6 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
 import {
-  ChevronDown,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
   ChevronUp,
   RefreshCw,
   Search,
@@ -8,7 +12,15 @@ import {
 } from "lucide-react";
 
 import NavigationMenu from "../components/NavigationMenu";
-import { getSheetData } from "../api/sicarisLoadouts.js";
+import {
+  getSheetData,
+} from "../api/sicarisLoadouts.js";
+
+import {
+  getStratagemCatalog,
+  getStratagemDescription,
+  findStratagem,
+} from "../api/stratagems.js";
 
 import "./RegimentsPage.css";
 
@@ -16,37 +28,16 @@ import "./RegimentsPage.css";
  * ---------------------------------------------------------------------------
  * SHEET PARSING
  * ---------------------------------------------------------------------------
- *
- * The sheet is structured vertically inside each column:
- *
- *   LOADOUT NAME
- *
- *   SLOT 1
- *   Category
- *   Stratagem
- *   Stratagem
- *
- *   SLOT 2
- *   Category
- *   Stratagem
- *   Stratagem
- *
- *   SLOT 3
- *   Category
- *   Stratagem
- *
- *   SLOT 4
- *   Category
- *   Stratagem
- *
- * Formatting from Google Sheets is not available through the current API,
- * so "SLOT" is used as the reliable boundary between sections.
  */
 
-const SLOT_PATTERN = /^SLOT\s+(\d+)/i;
+const SLOT_PATTERN =
+  /^SLOT\s+(\d+)/i;
 
 function cleanCell(value) {
-  if (value === null || value === undefined) {
+  if (
+    value === null ||
+    value === undefined
+  ) {
     return "";
   }
 
@@ -55,51 +46,42 @@ function cleanCell(value) {
 
 function cleanStratagemName(value) {
   return cleanCell(value)
-    .replace(/\s*\([^)]*\)\s*$/, "")
+    .replace(
+      /\s*\([^)]*\)\s*$/,
+      ""
+    )
     .trim();
 }
 
 function parseLoadouts(rows) {
-  if (!Array.isArray(rows) || rows.length < 2) {
+  if (
+    !Array.isArray(rows) ||
+    rows.length < 2
+  ) {
     return [];
   }
 
-  const columnCount = Math.max(
-    ...rows.map((row) =>
-      Array.isArray(row) ? row.length : 0
-    )
-  );
+  const columnCount =
+    Math.max(
+      0,
+      ...rows.map((row) =>
+        Array.isArray(row)
+          ? row.length
+          : 0
+      )
+    );
 
   const loadouts = [];
-
-  /*
-   * Sheet structure:
-   *
-   * ROW 0 = universal regiment/loadout type
-   * ROW 1 = regiment name
-   * ROW 2+ = slots
-   *
-   * Example:
-   *
-   * Infantry Reg.
-   * Primary: D.C.S. // Lib Pen
-   * SLOT 1
-   * Backpack
-   * B-1 Supply Pack (0)
-   * SLOT 2
-   * Specialist Weapon
-   * Machine Gun
-   * ...
-   */
 
   for (
     let columnIndex = 0;
     columnIndex < columnCount;
     columnIndex += 1
   ) {
-    const regimentName = cleanCell(
-      rows[1]?.[columnIndex]
-    );
+    const regimentName =
+      cleanCell(
+        rows[1]?.[columnIndex]
+      );
 
     if (!regimentName) {
       continue;
@@ -107,123 +89,106 @@ function parseLoadouts(rows) {
 
     const slots = [];
 
-let currentSlot = null;
-let expectingCategory = false;
+    let currentSlot = null;
+    let expectingCategory = false;
 
-for (
-  let rowIndex = 2;
-  rowIndex < rows.length;
-  rowIndex += 1
-) {
-  const value = cleanCell(
-    rows[rowIndex]?.[columnIndex]
-  );
+    for (
+      let rowIndex = 2;
+      rowIndex < rows.length;
+      rowIndex += 1
+    ) {
+      const value =
+        cleanCell(
+          rows[rowIndex]?.[
+          columnIndex
+          ]
+        );
 
-  if (!value) {
-    continue;
-  }
+      if (!value) {
+        continue;
+      }
 
-  const slotMatch = value.match(SLOT_PATTERN);
+      const slotMatch =
+        value.match(
+          SLOT_PATTERN
+        );
 
-  /*
-   * New slot.
-   */
-  if (slotMatch) {
-    /*
-     * The category may be included in the same cell:
-     *
-     *   SLOT 1 Backpack
-     *
-     * or:
-     *
-     *   SLOT 1
-     *   Backpack
-     *
-     * Handle the first form here.
-     */
-    const categoryFromSlot = value
-      .replace(SLOT_PATTERN, "")
-      .trim();
+      if (slotMatch) {
+        const categoryFromSlot =
+          value
+            .replace(
+              SLOT_PATTERN,
+              ""
+            )
+            .trim();
 
-    currentSlot = {
-      number: Number(slotMatch[1]),
-      label: `SLOT ${slotMatch[1]}`,
-      category: categoryFromSlot,
-      items: [],
-    };
+        currentSlot = {
+          number: Number(
+            slotMatch[1]
+          ),
+          label:
+            `SLOT ${slotMatch[1]}`,
+          category:
+            categoryFromSlot,
+          items: [],
+        };
 
-    slots.push(currentSlot);
+        slots.push(
+          currentSlot
+        );
 
-    /*
-     * If no category was included in the SLOT cell,
-     * the next non-empty row is the category.
-     */
-    expectingCategory = !categoryFromSlot;
+        expectingCategory =
+          !categoryFromSlot;
 
-    continue;
-  }
+        continue;
+      }
 
-  /*
-   * Ignore anything before the first SLOT.
-   */
-  if (!currentSlot) {
-    continue;
-  }
+      if (!currentSlot) {
+        continue;
+      }
 
-  /*
-   * Support sheets where the category is stored in
-   * its own row:
-   *
-   *   SLOT 1
-   *   Backpack
-   *   B-1 Supply Pack
-   *
-   * Only consume that row as the category.
-   */
-  if (expectingCategory) {
-    currentSlot.category = value;
-    expectingCategory = false;
-    continue;
-  }
+      if (expectingCategory) {
+        currentSlot.category =
+          value;
 
-  /*
-   * Every remaining value is a real stratagem.
-   *
-   * This means the FIRST stratagem is retained.
-   */
-  const itemName = cleanStratagemName(value);
+        expectingCategory =
+          false;
 
-  if (!itemName) {
-    continue;
-  }
+        continue;
+      }
 
-  currentSlot.items.push({
-    name: itemName,
-    category: currentSlot.category,
-  });
-}
+      const itemName =
+        cleanStratagemName(
+          value
+        );
 
-    /*
-     * Keep every slot that has a category.
-     *
-     * We do NOT require multiple entries.
-     *
-     * This is what allows:
-     *
-     * SLOT 1
-     * Backpack
-     * B-1 Supply Pack
-     *
-     * to remain visible.
-     */
-    const validSlots = slots.filter(
-      (slot) => Boolean(slot.category)
-    );
+      if (!itemName) {
+        continue;
+      }
 
-    if (validSlots.length > 0) {
+      currentSlot.items.push({
+        name: itemName,
+        category:
+          currentSlot.category,
+      });
+    }
+
+    const validSlots =
+      slots.filter(
+        (slot) =>
+          Boolean(
+            slot.category
+          )
+      );
+
+    if (
+      validSlots.length > 0
+    ) {
       loadouts.push({
-        title: regimentName,
-        slots: validSlots,
+        title:
+          regimentName,
+        slots:
+          validSlots,
       });
     }
   }
@@ -231,22 +196,18 @@ for (
   return loadouts;
 }
 
-
-
 /*
  * ---------------------------------------------------------------------------
  * STRATAGEM ICONS
  * ---------------------------------------------------------------------------
- *
- * The icons are loaded from the public Helldivers 2 SVG repository.
- *
- * We use exact mappings for names that differ between the sheet and the
- * icon repository, then fall back to trying the item's name across the
- * known icon folders.
  */
 
 const ICON_ROOT =
-  ["https:", "", "raw.githubusercontent.com"].join("//") +
+  [
+    "https:",
+    "",
+    "raw.githubusercontent.com",
+  ].join("//") +
   "/nvigneux/Helldivers-2-Stratagems-icons-svg/master";
 
 const ICON_FOLDERS = [
@@ -269,28 +230,34 @@ const ICON_FOLDERS = [
   "Redacted Regiment",
   "Servants of Freedom",
   "Urban Legends",
+  "Orbital Cannons",
 ];
 
-/*
- * Sheet names -> icon repository names.
- *
- * The first element is the folder.
- * The second element is the SVG filename without ".svg".
- */
-
 const ICON_OVERRIDES = {
-  "B-1 Supply Pack": ["Engineering Bay", "Supply Pack"],
+  "B-1 Supply Pack": [
+    "Engineering Bay",
+    "Supply Pack",
+  ],
+
   "Ballistic Shield": [
     "Engineering Bay",
     "Ballistic Shield Backpack",
   ],
+
   "Ballistic Shield Backpack": [
     "Engineering Bay",
     "Ballistic Shield Backpack",
   ],
 
-  "Guard Dog": ["Robotics Workshop", "Guard Dog"],
-  "Guard Dog Rover": ["Engineering Bay", "Guard Dog Rover"],
+  "Guard Dog": [
+    "Robotics Workshop",
+    "Guard Dog",
+  ],
+
+  "Guard Dog Rover": [
+    "Engineering Bay",
+    "Guard Dog Rover",
+  ],
 
   "Machine Gun": [
     "Patriotic Administration Center",
@@ -564,54 +531,94 @@ const ICON_OVERRIDES = {
 };
 
 function encodePathPart(value) {
-  return encodeURIComponent(value);
+  return encodeURIComponent(
+    value
+  );
 }
 
 function buildIconCandidates(name) {
-  const cleanedName = cleanStratagemName(name);
+  const cleanedName =
+    cleanStratagemName(
+      name
+    );
 
   const candidates = [];
 
-  const exactOverride = ICON_OVERRIDES[cleanedName];
+  const exactOverride =
+    ICON_OVERRIDES[
+    cleanedName
+    ];
 
   if (exactOverride) {
     candidates.push(
       `${ICON_ROOT}/${encodePathPart(
         exactOverride[0]
-      )}/${encodePathPart(exactOverride[1])}.svg`
+      )}/${encodePathPart(
+        exactOverride[1]
+      )}.svg`
     );
   }
 
-  for (const folder of ICON_FOLDERS) {
+  for (
+    const folder of ICON_FOLDERS
+  ) {
     const candidate =
-      `${ICON_ROOT}/${encodePathPart(folder)}/` +
-      `${encodePathPart(cleanedName)}.svg`;
+      `${ICON_ROOT}/${encodePathPart(
+        folder
+      )}/${encodePathPart(
+        cleanedName
+      )}.svg`;
 
-    if (!candidates.includes(candidate)) {
-      candidates.push(candidate);
+    if (
+      !candidates.includes(
+        candidate
+      )
+    ) {
+      candidates.push(
+        candidate
+      );
     }
   }
 
   return candidates;
 }
 
-function StratagemIcon({ name }) {
-  const candidates = useMemo(
-    () => buildIconCandidates(name),
-    [name]
-  );
+function StratagemIcon({
+  name,
+}) {
+  const candidates =
+    useMemo(
+      () =>
+        buildIconCandidates(
+          name
+        ),
+      [name]
+    );
 
-  const [candidateIndex, setCandidateIndex] = useState(0);
-  const [failed, setFailed] = useState(false);
+  const [
+    candidateIndex,
+    setCandidateIndex,
+  ] = useState(0);
+
+  const [
+    failed,
+    setFailed,
+  ] = useState(false);
 
   useEffect(() => {
     setCandidateIndex(0);
     setFailed(false);
   }, [name]);
 
-  if (failed || candidates.length === 0) {
+  if (
+    failed ||
+    candidates.length === 0
+  ) {
     return (
-      <div className="regiment-icon-fallback" aria-hidden="true">
+      <div
+        className="regiment-icon-fallback"
+        aria-hidden="true"
+      >
         <Shield size={27} />
       </div>
     );
@@ -619,12 +626,22 @@ function StratagemIcon({ name }) {
 
   return (
     <img
-      src={candidates[candidateIndex]}
+      src={
+        candidates[
+        candidateIndex
+        ]
+      }
       alt=""
       className="regiment-stratagem-icon"
       onError={() => {
-        if (candidateIndex + 1 < candidates.length) {
-          setCandidateIndex((index) => index + 1);
+        if (
+          candidateIndex + 1 <
+          candidates.length
+        ) {
+          setCandidateIndex(
+            (index) =>
+              index + 1
+          );
         } else {
           setFailed(true);
         }
@@ -635,333 +652,61 @@ function StratagemIcon({ name }) {
 
 /*
  * ---------------------------------------------------------------------------
- * STRATAGEM INFORMATION
+ * HELPERS
  * ---------------------------------------------------------------------------
- *
- * These summaries are intentionally short. The Google Sheet remains the
- * source of truth for which stratagems are authorized in each loadout.
- *
- * Anything not listed gets a useful generic description rather than an
- * empty expansion panel.
  */
 
-const STRATAGEM_INFO = {
-  "B-1 Supply Pack": {
-    type: "Backpack",
-    description:
-      "Carries additional ammunition, grenades, and stims for resupply on the battlefield.",
-  },
+function getDirectionSymbol(
+  direction
+) {
+  const symbols = {
+    up: "↑",
+    down: "↓",
+    left: "←",
+    right: "→",
+  };
 
-  "Shield Generator Pack": {
-    type: "Backpack",
-    description:
-      "Projects a personal energy shield that absorbs incoming damage before collapsing.",
-  },
-
-  "Ballistic Shield": {
-    type: "Backpack",
-    description:
-      "Provides a portable ballistic shield for protection against conventional ranged fire.",
-  },
-
-  "Ballistic Shield Backpack": {
-    type: "Backpack",
-    description:
-      "Provides a portable ballistic shield for protection against conventional ranged fire.",
-  },
-
-  "Guard Dog": {
-    type: "Backpack",
-    description:
-      "Deploys an autonomous guard drone equipped with an assault rifle.",
-  },
-
-  "Guard Dog Rover": {
-    type: "Backpack",
-    description:
-      "Deploys an autonomous drone equipped with a laser weapon for continuous battlefield support.",
-  },
-
-  "Machine Gun": {
-    type: "Support Weapon",
-    description:
-      "A general-purpose machine gun designed for sustained fire against light and medium targets.",
-  },
-
-  "Anti Materiel Rifle": {
-    type: "Support Weapon",
-    description:
-      "A high-caliber rifle designed for long-range precision fire against armored targets.",
-  },
-
-  "Anti-Materiel Rifle": {
-    type: "Support Weapon",
-    description:
-      "A high-caliber rifle designed for long-range precision fire against armored targets.",
-  },
-
-  "Grenade Launcher": {
-    type: "Support Weapon",
-    description:
-      "Launches explosive grenades for clearing groups of enemies and fortified positions.",
-  },
-
-  "Railgun": {
-    type: "Support Weapon",
-    description:
-      "A charged electromagnetic weapon capable of penetrating heavily armored targets.",
-  },
-
-  "Flamethrower": {
-    type: "Support Weapon",
-    description:
-      "Projects sustained flames for close-range area denial and incendiary damage.",
-  },
-
-  "Arc Thrower": {
-    type: "Support Weapon",
-    description:
-      "Projects charged arcs of electricity that can strike multiple nearby targets.",
-  },
-
-  "Commando": {
-    type: "Support Weapon",
-    description:
-      "A disposable guided rocket launcher carrying multiple anti-armor rockets.",
-  },
-
-  "Heavy Machine Gun": {
-    type: "Support Weapon",
-    description:
-      "A high-powered machine gun intended for sustained fire against tougher targets.",
-  },
-
-  "Laser Cannon": {
-    type: "Support Weapon",
-    description:
-      "A continuous-beam energy weapon effective against armored targets without conventional ammunition.",
-  },
-
-  "Quasar Cannon": {
-    type: "Support Weapon",
-    description:
-      "A charge-based energy cannon that fires a powerful explosive anti-armor projectile.",
-  },
-
-  "HMG Emplacement": {
-    type: "Defensive Stratagem",
-    description:
-      "Deploys a stationary heavy machine gun emplacement for sustained defensive fire.",
-  },
-
-  "Grenadier Battlement": {
-    type: "Defensive Stratagem",
-    description:
-      "Deploys ballistic cover with a mounted grenade launcher for holding defensive positions.",
-  },
-
-  "Supply FRV": {
-    type: "Vehicle",
-    description:
-      "Deploys a fast reconnaissance vehicle equipped with an automated turret and onboard supplies.",
-  },
-
-  "M-103 Supply FRV": {
-    type: "Vehicle",
-    description:
-      "Deploys a fast reconnaissance vehicle equipped with an automated turret and onboard supplies.",
-  },
-
-  "M-102 Fast Recon Vehicle": {
-    type: "Vehicle",
-    description:
-      "Deploys a fast reconnaissance vehicle for rapid squad movement and mounted fire support.",
-  },
-
-  "Fast Recon Vehicle": {
-    type: "Vehicle",
-    description:
-      "Deploys a fast reconnaissance vehicle for rapid squad movement and mounted fire support.",
-  },
-
-  "Incendiary FRV": {
-    type: "Vehicle",
-    description:
-      "Deploys an armored reconnaissance vehicle equipped with a roof-mounted heavy flamethrower.",
-  },
-
-  "M-104 Incinerator FRV": {
-    type: "Vehicle",
-    description:
-      "Deploys an armored reconnaissance vehicle equipped with a roof-mounted heavy flamethrower.",
-  },
-
-  "FAF-14 Spear": {
-    type: "Anti-Tank",
-    description:
-      "A guided anti-tank launcher designed to lock onto and destroy heavily armored targets.",
-  },
-
-  "Spear": {
-    type: "Anti-Tank",
-    description:
-      "A guided anti-tank launcher designed to lock onto and destroy heavily armored targets.",
-  },
-
-  "AC-8 Autocannon": {
-    type: "Support Weapon",
-    description:
-      "A powerful autocannon effective against medium and heavy targets, with a dedicated ammunition backpack.",
-  },
-
-  "Autocannon": {
-    type: "Support Weapon",
-    description:
-      "A powerful autocannon effective against medium and heavy targets, with a dedicated ammunition backpack.",
-  },
-
-  "GR-8 Recoilless Rifle": {
-    type: "Anti-Tank",
-    description:
-      "A crew-served recoilless rifle designed to destroy armored targets and fortified positions.",
-  },
-
-  "Recoilless Rifle": {
-    type: "Anti-Tank",
-    description:
-      "A crew-served recoilless rifle designed to destroy armored targets and fortified positions.",
-  },
-
-  "Orbital 120 HE Barrage": {
-    type: "Orbital",
-    description:
-      "Calls in a concentrated barrage of high-explosive orbital artillery rounds.",
-  },
-
-  "Orbital 120MM HE Barrage": {
-    type: "Orbital",
-    description:
-      "Calls in a concentrated barrage of high-explosive orbital artillery rounds.",
-  },
-
-  "Orbital EMS Strike": {
-    type: "Orbital",
-    description:
-      "Creates an electromagnetic pulse field that slows and disables affected enemies.",
-  },
-
-  "Orbital Smoke Strike": {
-    type: "Orbital",
-    description:
-      "Deploys an orbital smoke screen to obscure enemy sight lines and movement.",
-  },
-
-  "Orbital Walking Barrage": {
-    type: "Orbital",
-    description:
-      "Sends a moving line of orbital artillery fire across the designated area.",
-  },
-
-  "Orbital Precision Strike": {
-    type: "Orbital",
-    description:
-      "Calls down a precise high-explosive orbital strike on the designated location.",
-  },
-
-  "Orbital Gas Strike": {
-    type: "Orbital",
-    description:
-      "Deploys a persistent cloud of corrosive gas over the target area.",
-  },
-
-  "Emancipator Exosuit": {
-    type: "Exosuit",
-    description:
-      "Deploys a heavily armed combat exosuit equipped with dual autocannons.",
-  },
-
-  "Patriot Exosuit": {
-    type: "Exosuit",
-    description:
-      "Deploys a combat exosuit equipped with heavy ballistic and rocket weaponry.",
-  },
-
-  "Machine Gun Sentry": {
-    type: "Sentry",
-    description:
-      "Deploys an automated machine gun turret that independently engages nearby enemies.",
-  },
-
-  "Mortar Sentry": {
-    type: "Sentry",
-    description:
-      "Deploys an automated mortar turret capable of indirect explosive fire.",
-  },
-
-  "EMS Mortar Sentry": {
-    type: "Sentry",
-    description:
-      "Deploys an automated mortar that fires electromagnetic disruption rounds.",
-  },
-
-  "Autocannon Sentry": {
-    type: "Sentry",
-    description:
-      "Deploys an automated autocannon turret for heavy defensive fire.",
-  },
-
-  "Rocket Sentry": {
-    type: "Sentry",
-    description:
-      "Deploys an automated rocket turret for engaging larger targets.",
-  },
-
-  "Gatling Sentry": {
-    type: "Sentry",
-    description:
-      "Deploys a rapid-fire automated turret for suppressing groups of enemies.",
-  },
-
-  "Tesla Tower": {
-    type: "Defensive Stratagem",
-    description:
-      "Deploys an electrical tower that automatically shocks nearby enemies.",
-  },
-
-  "Incendiary Mines": {
-    type: "Minefield",
-    description:
-      "Deploys proximity-triggered incendiary mines that ignite enemies in the blast area.",
-  },
-
-  "Anti-Personnel Minefield": {
-    type: "Minefield",
-    description:
-      "Deploys a field of proximity-triggered mines designed to clear groups of infantry targets.",
-  },
-
-  "TD-220 Bastion": {
-    type: "Vehicle",
-    description:
-      "Deploys a heavily armored tank destroyer equipped with a high-velocity main cannon and heavy machine gun.",
-  },
-
-  "TD-220 Bastion MK XVI": {
-    type: "Vehicle",
-    description:
-      "Deploys a heavily armored tank destroyer equipped with a high-velocity main cannon and heavy machine gun.",
-  },
-};
-
-function getStratagemInfo(name, category) {
   return (
-    STRATAGEM_INFO[name] || {
-      type: category || "Stratagem",
-      description:
-        "Authorized regiment stratagem. Select this entry to view its designation and loadout assignment.",
-    }
+    symbols[direction] ||
+    "?"
   );
 }
+
+function getStratagemInfoFallback(
+  name,
+  category
+) {
+  return {
+    name,
+
+    type: null,
+
+    permitType: null,
+
+    stratagemType: null,
+
+    source: null,
+
+    unlockLevel: null,
+
+    unlockCost: null,
+
+    cooldown: null,
+
+    callInTime: null,
+
+    uses: null,
+
+    traits: [],
+
+    code: [],
+
+    codeDisplay: "",
+
+    wikiUrl: null,
+  };
+}
+
 
 /*
  * ---------------------------------------------------------------------------
@@ -974,13 +719,80 @@ function StratagemButton({
   category,
   expanded,
   onClick,
+  catalog,
 }) {
-  const info = getStratagemInfo(name, category);
+  const catalogInfo =
+    findStratagem(
+      catalog,
+      name
+    );
+
+  const [
+    description,
+    setDescription,
+  ] = useState(null);
+
+  const [
+    descriptionLoading,
+    setDescriptionLoading,
+  ] = useState(false);
+
+  useEffect(() => {
+    if (
+      !expanded ||
+      description
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+
+    setDescriptionLoading(
+      true
+    );
+
+    getStratagemDescription(
+      name
+    )
+      .then((value) => {
+        if (!cancelled) {
+          setDescription(
+            value
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setDescriptionLoading(
+            false
+          );
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    expanded,
+    name,
+    description,
+  ]);
+
+  const info =
+    catalogInfo ||
+    getStratagemInfoFallback(
+      name,
+      category
+    );
 
   return (
     <div
-      className={`regiment-stratagem ${expanded ? "regiment-stratagem-expanded" : ""
-        }`}
+      className={
+        `regiment-stratagem ${expanded
+          ? "regiment-stratagem-expanded"
+          : ""
+        }`
+      }
     >
       <button
         type="button"
@@ -990,7 +802,9 @@ function StratagemButton({
         aria-label={`View ${name}`}
       >
         <span className="regiment-stratagem-icon-wrap">
-          <StratagemIcon name={name} />
+          <StratagemIcon
+            name={name}
+          />
         </span>
 
         <span className="regiment-stratagem-hover-name">
@@ -1006,7 +820,9 @@ function StratagemButton({
                 STRATAGEM DESIGNATION
               </div>
 
-              <h3>{name}</h3>
+              <h3>
+                {name}
+              </h3>
             </div>
 
             <button
@@ -1015,16 +831,174 @@ function StratagemButton({
               onClick={onClick}
               aria-label={`Collapse ${name}`}
             >
-              <ChevronUp size={16} />
+              <ChevronUp
+                size={16}
+              />
             </button>
           </div>
 
           <div className="regiment-stratagem-details-meta">
-            <span>{info.type}</span>
-            <span>{category}</span>
+            {category && (
+              <span className="regiment-stratagem-meta-sheet">
+                LOADOUT: {category}
+              </span>
+            )}
+
+            {info.type && (
+              <span>
+                TYPE: {info.type}
+              </span>
+            )}
+
+            {info.permitType && (
+              <span>
+                PERMIT: {info.permitType}
+              </span>
+            )}
           </div>
 
-          <p>{info.description}</p>
+
+          {info.code?.length >
+            0 && (
+              <div className="regiment-stratagem-code">
+                <div className="regiment-stratagem-code-label">
+                  STRATAGEM CODE
+                </div>
+
+                <div className="regiment-stratagem-code-sequence">
+                  {info.code.map(
+                    (
+                      direction,
+                      index
+                    ) => (
+                      <span
+                        key={`${direction}-${index}`}
+                        className="regiment-stratagem-code-key"
+                        title={
+                          direction
+                        }
+                      >
+                        {getDirectionSymbol(
+                          direction
+                        )}
+                      </span>
+                    )
+                  )}
+                </div>
+              </div>
+            )}
+
+          <div className="regiment-stratagem-stats">
+            {info.cooldown && (
+              <div className="regiment-stratagem-stat">
+                <span>
+                  COOLDOWN
+                </span>
+
+                <strong>
+                  {
+                    info.cooldown
+                  }
+                </strong>
+              </div>
+            )}
+
+            {info.unlockLevel && (
+              <div className="regiment-stratagem-stat">
+                <span>
+                  UNLOCK
+                </span>
+
+                <strong>
+                  {
+                    info.unlockLevel
+                  }
+                </strong>
+              </div>
+            )}
+
+            {info.unlockCost && (
+              <div className="regiment-stratagem-stat">
+                <span>
+                  COST
+                </span>
+
+                <strong>
+                  {
+                    info.unlockCost
+                  }
+                </strong>
+              </div>
+            )}
+
+            {info.unlockCost && (
+              <div className="regiment-stratagem-stat">
+                <span>
+                  COST
+                </span>
+
+                <strong>
+                  {info.unlockCost}
+                </strong>
+              </div>
+            )}
+
+          </div>
+
+          {info.traits?.length >
+            0 && (
+              <div className="regiment-stratagem-traits">
+                {info.traits.map(
+                  (trait) => (
+                    <span
+                      key={trait}
+                    >
+                      {trait}
+                    </span>
+                  )
+                )}
+              </div>
+            )}
+
+          {(info.source ||
+            info.shipModule) && (
+              <div className="regiment-stratagem-source">
+                <span>
+                  SHIP MODULE
+                </span>
+
+                <strong>
+                  {info.source ||
+                    info.shipModule}
+                </strong>
+              </div>
+            )}
+
+          <div className="regiment-stratagem-description">
+            {descriptionLoading ? (
+              <span className="regiment-stratagem-description-loading">
+                RETRIEVING STRATAGEM RECORD...
+              </span>
+            ) : (
+              <p>
+                {description ||
+                  "No tactical description is currently available for this stratagem."}
+              </p>
+            )}
+          </div>
+
+          {info.wikiUrl && (
+            <a
+              className="regiment-stratagem-wiki-link"
+              href={
+                info.wikiUrl
+              }
+              target="_blank"
+              rel="noreferrer"
+            >
+              OPEN FULL STRATAGEM RECORD
+            </a>
+          )}
         </div>
       )}
     </div>
@@ -1033,7 +1007,7 @@ function StratagemButton({
 
 /*
  * ---------------------------------------------------------------------------
- * SLOT SECTION
+ * SLOT
  * ---------------------------------------------------------------------------
  */
 
@@ -1042,12 +1016,15 @@ function SlotSection({
   slot,
   expandedItem,
   onToggle,
+  catalog,
 }) {
   return (
     <section className="regiment-slot">
       <header className="regiment-slot-header">
         <div className="regiment-slot-number">
-          {String(slot.number).padStart(2, "0")}
+          {String(
+            slot.number
+          ).padStart(2, "0")}
         </div>
 
         <div>
@@ -1055,34 +1032,49 @@ function SlotSection({
             {slot.label}
           </div>
 
-          <h2>{slot.category}</h2>
+          <h2>
+            {slot.category}
+          </h2>
         </div>
       </header>
 
-      {slot.items.length > 0 ? (
+      {slot.items.length >
+        0 ? (
         <div className="regiment-stratagem-grid">
-          {slot.items.map((item, itemIndex) => {
-            const itemKey =
-              `${loadoutIndex}-${slot.number}-${itemIndex}-${item.name}`;
+          {slot.items.map(
+            (
+              item,
+              itemIndex
+            ) => {
+              const itemKey =
+                `${loadoutIndex}-${slot.number}-${itemIndex}-${item.name}`;
 
-            return (
-              <StratagemButton
-                key={itemKey}
-                name={item.name}
-                category={item.category}
-                expanded={
-                  expandedItem === itemKey
-                }
-                onClick={() =>
-                  onToggle(
-                    expandedItem === itemKey
-                      ? null
-                      : itemKey
-                  )
-                }
-              />
-            );
-          })}
+              return (
+                <StratagemButton
+                  key={itemKey}
+                  name={item.name}
+                  category={
+                    item.category
+                  }
+                  catalog={
+                    catalog
+                  }
+                  expanded={
+                    expandedItem ===
+                    itemKey
+                  }
+                  onClick={() =>
+                    onToggle(
+                      expandedItem ===
+                        itemKey
+                        ? null
+                        : itemKey
+                    )
+                  }
+                />
+              );
+            }
+          )}
         </div>
       ) : (
         <div className="regiment-slot-empty">
@@ -1093,8 +1085,6 @@ function SlotSection({
   );
 }
 
-
-
 /*
  * ---------------------------------------------------------------------------
  * PAGE
@@ -1102,28 +1092,113 @@ function SlotSection({
  */
 
 export default function RegimentsPage() {
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [search, setSearch] = useState("");
-  const [expandedItem, setExpandedItem] = useState(null);
+  const [
+    rows,
+    setRows,
+  ] = useState([]);
+
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
+
+  /*
+   * IMPORTANT:
+   * This state was missing from the previous version.
+   */
+  const [
+    error,
+    setError,
+  ] = useState(null);
+
+  const [
+    stratagemCatalog,
+    setStratagemCatalog,
+  ] = useState([]);
+
+  const [stratagemCatalogError, setStratagemCatalogError] =
+    useState(null);
+
+  const [
+    search,
+    setSearch,
+  ] = useState("");
+
+  const [
+    expandedItem,
+    setExpandedItem,
+  ] = useState(null);
+
+  /*
+   * -------------------------------------------------------------------------
+   * LOAD STRATAGEM CATALOG
+   * -------------------------------------------------------------------------
+   */
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getStratagemCatalog()
+      .then((catalog) => {
+        if (!cancelled) {
+          setStratagemCatalog(
+            Array.isArray(
+              catalog
+            )
+              ? catalog
+              : []
+          );
+        }
+      })
+      .catch((err) => {
+        /*
+         * Catalog data is supplemental.
+         *
+         * Never prevent the regiment
+         * page from rendering.
+         */
+        console.warn(
+          "Failed to load stratagem catalog:",
+          err
+        );
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /*
+   * -------------------------------------------------------------------------
+   * LOAD SHEET
+   * -------------------------------------------------------------------------
+   */
 
   async function loadData() {
     try {
       setLoading(true);
       setError(null);
 
-      const data = await getSheetData();
+      const data =
+        await getSheetData();
 
-      // Keep the complete sheet structure intact.
-      // parseLoadouts() knows that:
-      //   rows[0] = top metadata row (ignored)
-      //   rows[1] = regiment names
-      //   rows[2+] = slot data
-      setRows(data);
-      setExpandedItem(null);
+      setRows(
+        Array.isArray(data)
+          ? data
+          : []
+      );
+
+      setExpandedItem(
+        null
+      );
     } catch (err) {
-      console.error(err);
+      console.error(
+        "Failed to load regiment loadout data:",
+        err
+      );
+
+      setRows([]);
+
       setError(
         "FAILED TO LOAD REGIMENT LOADOUT DATA"
       );
@@ -1136,83 +1211,108 @@ export default function RegimentsPage() {
     loadData();
   }, []);
 
-  const loadouts = useMemo(
-    () => parseLoadouts(rows),
-    [rows]
-  );
-
   /*
-   * Search works against the parsed data rather than raw spreadsheet rows.
-   *
-   * Searching for a loadout name:
-   *   -> shows the complete loadout.
-   *
-   * Searching for a category:
-   *   -> shows the complete matching slot.
-   *
-   * Searching for a stratagem:
-   *   -> shows only the matching stratagems.
+   * -------------------------------------------------------------------------
+   * PARSE LOADOUTS
+   * -------------------------------------------------------------------------
    */
 
-  const visibleLoadouts = useMemo(() => {
-    const query = search.trim().toLowerCase();
+  const loadouts =
+    useMemo(
+      () =>
+        parseLoadouts(rows),
+      [rows]
+    );
 
-    if (!query) {
-      return loadouts;
-    }
+  /*
+   * -------------------------------------------------------------------------
+   * SEARCH
+   * -------------------------------------------------------------------------
+   */
 
-    return loadouts
-      .map((loadout) => {
-        const loadoutMatches =
-          loadout.title
-            .toLowerCase()
-            .includes(query);
+  const visibleLoadouts =
+    useMemo(() => {
+      const query =
+        search
+          .trim()
+          .toLowerCase();
 
-        if (loadoutMatches) {
-          return loadout;
-        }
+      if (!query) {
+        return loadouts;
+      }
 
-        const slots = loadout.slots
-          .map((slot) => {
-            const categoryMatches =
-              slot.category
-                .toLowerCase()
-                .includes(query);
+      return loadouts
+        .map((loadout) => {
+          const loadoutMatches =
+            loadout.title
+              .toLowerCase()
+              .includes(query);
 
-            if (categoryMatches) {
-              return slot;
-            }
+          if (
+            loadoutMatches
+          ) {
+            return loadout;
+          }
 
-            const items = slot.items.filter(
-              (item) =>
-                item.name
-                  .toLowerCase()
-                  .includes(query)
-            );
+          const slots =
+            loadout.slots
+              .map((slot) => {
+                const categoryMatches =
+                  slot.category
+                    .toLowerCase()
+                    .includes(
+                      query
+                    );
 
-            if (!items.length) {
-              return null;
-            }
+                if (
+                  categoryMatches
+                ) {
+                  return slot;
+                }
 
-            return {
-              ...slot,
-              items,
-            };
-          })
-          .filter(Boolean);
+                const items =
+                  slot.items.filter(
+                    (item) =>
+                      item.name
+                        .toLowerCase()
+                        .includes(
+                          query
+                        )
+                  );
 
-        if (!slots.length) {
-          return null;
-        }
+                if (
+                  !items.length
+                ) {
+                  return null;
+                }
 
-        return {
-          ...loadout,
-          slots,
-        };
-      })
-      .filter(Boolean);
-  }, [loadouts, search]);
+                return {
+                  ...slot,
+                  items,
+                };
+              })
+              .filter(Boolean);
 
+          if (!slots.length) {
+            return null;
+          }
+
+          return {
+            ...loadout,
+            slots,
+          };
+        })
+        .filter(Boolean);
+    }, [
+      loadouts,
+      search,
+    ]);
+
+  /*
+   * -------------------------------------------------------------------------
+   * RENDER
+   * -------------------------------------------------------------------------
+   */
 
   return (
     <div className="regiments-page">
@@ -1221,7 +1321,10 @@ export default function RegimentsPage() {
           <Shield size={22} />
 
           <div>
-            <span>S.E.A.F. // L.E.M.O.N</span>
+            <span>
+              S.E.A.F. // L.E.M.O.N
+            </span>
+
             <small>
               REGIMENT LOADOUT DATABASE
             </small>
@@ -1229,11 +1332,18 @@ export default function RegimentsPage() {
         </div>
 
         <div className="regiments-header-status">
-          <span>DATABASE</span>
+          <span>
+            DATABASE
+          </span>
 
           <strong>
-            {loading ? "SYNCING" : "ONLINE"}
+            {loading
+              ? "SYNCING"
+              : stratagemCatalog.length > 0
+                ? "ONLINE"
+                : "PARTIAL"}
           </strong>
+
         </div>
 
         <NavigationMenu />
@@ -1243,23 +1353,31 @@ export default function RegimentsPage() {
         <section className="regiments-title">
           <div>
             <div className="regiments-kicker">
-              FORCE DATABASE // PERSONNEL EQUIPMENT
+              FORCE DATABASE //
+              PERSONNEL EQUIPMENT
             </div>
 
-            <h1>REGIMENT LOADOUTS</h1>
+            <h1>
+              REGIMENT LOADOUTS
+            </h1>
 
             <p>
-              Authorized regiment equipment,
-              specialist weapons, specialties
-              and universal stratagems.
+              Authorized regiment
+              equipment, specialist
+              weapons, specialties
+              and universal
+              stratagems.
             </p>
           </div>
 
           <div className="regiments-source">
-            <span>SOURCE</span>
+            <span>
+              SOURCE
+            </span>
 
             <strong>
-              SICARIS // GOOGLE SHEETS
+              SICARIS // GOOGLE
+              SHEETS
             </strong>
           </div>
         </section>
@@ -1273,7 +1391,9 @@ export default function RegimentsPage() {
               placeholder="SEARCH LOADOUTS..."
               value={search}
               onChange={(event) =>
-                setSearch(event.target.value)
+                setSearch(
+                  event.target.value
+                )
               }
             />
           </div>
@@ -1281,7 +1401,9 @@ export default function RegimentsPage() {
           <button
             type="button"
             className="regiments-refresh"
-            onClick={loadData}
+            onClick={
+              loadData
+            }
             disabled={loading}
           >
             <RefreshCw
@@ -1297,6 +1419,27 @@ export default function RegimentsPage() {
           </button>
         </section>
 
+        {!loading && (
+          <div className="regiments-catalog-status">
+            <span>
+              STRATAGEM LIBRARY
+            </span>
+
+            <strong>
+              {stratagemCatalog.length > 0
+                ? `${stratagemCatalog.length} RECORDS`
+                : "UNAVAILABLE"}
+            </strong>
+
+            {stratagemCatalogError && (
+              <span className="regiments-catalog-status-error">
+                METADATA OFFLINE
+              </span>
+            )}
+          </div>
+        )}
+
+
         {loading && (
           <div className="regiments-state">
             <span>
@@ -1305,31 +1448,44 @@ export default function RegimentsPage() {
           </div>
         )}
 
-        {error && !loading && (
-          <div className="regiments-state regiments-state-error">
-            <span>{error}</span>
+        {error &&
+          !loading && (
+            <div className="regiments-state regiments-state-error">
+              <span>
+                {error}
+              </span>
 
-            <button
-              type="button"
-              onClick={loadData}
-            >
-              RETRY
-            </button>
-          </div>
-        )}
+              <button
+                type="button"
+                onClick={
+                  loadData
+                }
+              >
+                RETRY
+              </button>
+            </div>
+          )}
 
         {!loading &&
           !error &&
-          visibleLoadouts.length > 0 && (
+          visibleLoadouts.length >
+          0 && (
             <section className="regiments-loadouts">
               {visibleLoadouts.map(
-                (loadout, loadoutIndex) => (
+                (
+                  loadout,
+                  loadoutIndex
+                ) => (
                   <article
                     className="regiment-loadout"
                     key={`${loadout.title}-${loadoutIndex}`}
                   >
                     <header className="regiment-loadout-header">
-                      <h2>{loadout.title}</h2>
+                      <h2>
+                        {
+                          loadout.title
+                        }
+                      </h2>
                     </header>
 
                     <div className="regiment-loadout-body">
@@ -1340,12 +1496,17 @@ export default function RegimentsPage() {
                             loadoutIndex={
                               loadoutIndex
                             }
-                            slot={slot}
+                            slot={
+                              slot
+                            }
                             expandedItem={
                               expandedItem
                             }
                             onToggle={
                               setExpandedItem
+                            }
+                            catalog={
+                              stratagemCatalog
                             }
                           />
                         )
@@ -1359,16 +1520,20 @@ export default function RegimentsPage() {
 
         {!loading &&
           !error &&
-          loadouts.length > 0 &&
-          visibleLoadouts.length === 0 && (
+          loadouts.length >
+          0 &&
+          visibleLoadouts.length ===
+          0 && (
             <div className="regiments-state">
-              NO LOADOUTS MATCH SEARCH.
+              NO LOADOUTS MATCH
+              SEARCH.
             </div>
           )}
 
         {!loading &&
           !error &&
-          rows.length === 0 && (
+          rows.length ===
+          0 && (
             <div className="regiments-state">
               NO REGIMENT DATA FOUND.
             </div>
