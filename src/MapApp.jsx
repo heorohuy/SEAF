@@ -897,34 +897,7 @@ export default function App() {
             {selectedPlanetRegiments?.length > 0 && (
               <div className="associated-block">
                 <div className="status-label">DEPLOYED REGIMENTS</div>
-                <div className="regiment-grid">
-                  {selectedPlanetRegiments.map((regiment, index) => {
-                    const isActive = activeRegiment === regiment;
-                    return (
-                      <button
-                        key={`${regiment.name || 'regiment'}-${index}`}
-                        className={`regiment-button ${getFdpHealthClass(regiment.fdp)} ${isActive ? 'active' : ''}`}
-                        type="button"
-                        onClick={() => {
-                          if (isActive) {
-                            setActiveRegiment(null);
-                          } else {
-                            setActiveRegiment(regiment);
-                            setActiveFob(null);
-                          }
-                        }}
-                        title={regiment.name}
-                      >
-                        <img
-                          src={getRegimentIcon(regiment.specialty)}
-                          alt={regiment.specialty || 'Regiment'}
-                          width="22"
-                          height="22"
-                        />
-                      </button>
-                    );
-                  })}
-                </div>
+                
 
                 {activeRegiment && (
                   <div className="fob-details regiment-details">
@@ -958,6 +931,35 @@ export default function App() {
                     </div>
                   </div>
                 )}
+
+                <div className="regiment-grid">
+                  {selectedPlanetRegiments.map((regiment, index) => {
+                    const isActive = activeRegiment === regiment;
+                    return (
+                      <button
+                        key={`${regiment.name || 'regiment'}-${index}`}
+                        className={`regiment-button ${getFdpHealthClass(regiment.fdp)} ${isActive ? 'active' : ''}`}
+                        type="button"
+                        onClick={() => {
+                          if (isActive) {
+                            setActiveRegiment(null);
+                          } else {
+                            setActiveRegiment(regiment);
+                            setActiveFob(null);
+                          }
+                        }}
+                        title={regiment.name}
+                      >
+                        <img
+                          src={getRegimentIcon(regiment.specialty)}
+                          alt={regiment.specialty || 'Regiment'}
+                          width="22"
+                          height="22"
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
