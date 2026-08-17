@@ -137,6 +137,26 @@ export default function NavigationMenu() {
                 <small>ID // POSITION // BIOME</small>
               </span>
             </NavLink>
+
+            <NavLink
+              to="/regiments"
+              className={({ isActive }) =>
+                `navigation-menu-link ${isActive
+                  ? 'navigation-menu-link--active'
+                  : ''
+                }`
+              }
+              onClick={closeMenu}
+            >
+              <span className="navigation-menu-link-icon">
+                <Database size={19} />
+              </span>
+
+              <span className="navigation-menu-link-content">
+                <strong>REGIMENT DATABASE</strong>
+                <small>ID // POSITION</small>
+              </span>
+            </NavLink>
           </nav>
 
           <div className="navigation-menu-section-label navigation-menu-section-label--force">
