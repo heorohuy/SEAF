@@ -9,7 +9,7 @@ I would like a planetary objective section that explains which objectives are hi
 
 It should be able to, at a minimum, provide a convenient and easy way for the user to know what you actually get access to when picking the stuff. - done
 
-100% you need to normie test it
+100% you need to normie test it - told fede
 
 F1:
 1) SEAF Loadout Documentation - Tabs/Hamburger Menu/Popup - done
@@ -29,3 +29,7 @@ JJ:
 4) Add arrow key navigation for the map? - done
 
 5) Adjust Text that shows the Regiment Specialty in only ONE line, if it's a long name
+
+hamberger menu playes peekaboo
+
+api errors ltos and ltos

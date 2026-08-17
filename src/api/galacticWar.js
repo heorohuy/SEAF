@@ -476,103 +476,99 @@ function buildSectors(planets) {
   });
 }
 
+let galacticMapRequest = null;
+
 export async function fetchGalacticMap() {
-  const [
-    rawPlanets,
-    warIdResponse,
-  ] = await Promise.all([
-    fetchJson('/api/v1/planets'),
+  if (galacticMapRequest) {
+    return galacticMapRequest;
+  }
 
-    fetchJson(
-      '/raw/api/WarSeason/current/WarID',
-    ),
-  ]);
+  galacticMapRequest = (async () => {
+    const [
+      rawPlanets,
+      warIdResponse,
+    ] = await Promise.all([
+      fetchJson('/api/v1/planets'),
+      fetchJson('/raw/api/WarSeason/current/WarID'),
+    ]);
 
-  const warId =
-    warIdResponse?.id;
+    const warId = warIdResponse?.id;
 
-  const warInfo = warId
-    ? await fetchJson(
-      `/raw/api/WarSeason/${warId}/WarInfo`,
-    )
-    : null;
+    const warInfo = warId
+      ? await fetchJson(
+          `/raw/api/WarSeason/${warId}/WarInfo`,
+        )
+      : null;
 
-  const planetInfos =
-    Array.isArray(
-      warInfo?.planetInfos,
-    )
-      ? warInfo.planetInfos
+    const planetInfos =
+      Array.isArray(warInfo?.planetInfos)
+        ? warInfo.planetInfos
+        : [];
+
+    const planetInfoByIndex =
+      new Map(
+        planetInfos.map(
+          (info) => [
+            String(info.index),
+            info,
+          ],
+        ),
+      );
+
+    const planets = Array.isArray(rawPlanets)
+      ? Array.from(
+          new Map(
+            rawPlanets.map((raw) => {
+              const planet = normalizePlanet(
+                raw,
+                planetInfoByIndex.get(String(raw.index)),
+              );
+
+              return [planet.name, planet];
+            }),
+          ).values(),
+        )
       : [];
 
-  const planetInfoByIndex =
-    new Map(
-      planetInfos.map(
-        (info) => [
-          String(info.index),
-          info,
-        ],
-      ),
-    );
-
-const planets = Array.isArray(rawPlanets)
-  ? Array.from(
+    const planetsByIndex =
       new Map(
-        rawPlanets.map((raw) => {
-          const planet = normalizePlanet(
-            raw,
-            planetInfoByIndex.get(String(raw.index)),
-          );
+        planets.map((planet) => [
+          String(planet.index),
+          planet,
+        ]),
+      );
 
-          return [planet.name, planet];
-        }),
-      ).values(),
-    )
-  : [];
+    const connections =
+      buildConnections(
+        planetsByIndex,
+        planetInfos,
+      );
 
+    const sectors =
+      buildSectors(planets);
 
-  const planetsByIndex =
-    new Map(
-      planets.map((planet) => [
-        String(planet.index),
-        planet,
-      ]),
-    );
+    const warInfoPayload = warInfo
+      ? {
+          warId: warInfo.warId,
+          startDate: warInfo.startDate,
+          endDate: warInfo.endDate,
+          layoutVersion: warInfo.layoutVersion,
+        }
+      : null;
 
-  const connections =
-    buildConnections(
-      planetsByIndex,
-      planetInfos,
-    );
+    return {
+      planets,
+      connections,
+      sectors,
+      warInfo: warInfoPayload,
+    };
+  })();
 
-  const sectors =
-    buildSectors(planets);
-
-  const warInfoPayload = warInfo
-    ? {
-      warId:
-        warInfo.warId,
-
-      startDate:
-        warInfo.startDate,
-
-      endDate:
-        warInfo.endDate,
-
-      layoutVersion:
-        warInfo.layoutVersion,
-    }
-    : null;
-
-  return {
-    planets,
-
-    connections,
-
-    sectors,
-
-    warInfo:
-      warInfoPayload,
-  };
+  try {
+    return await galacticMapRequest;
+  } finally {
+    galacticMapRequest = null;
+  }
 }
 
 export default fetchGalacticMap;
