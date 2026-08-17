@@ -1,26 +1,27 @@
 import {
-  useEffect,
-  useMemo,
-  useState,
+    useEffect,
+    useMemo,
+    useState,
 } from "react";
 
 import {
-  Search,
-  Database,
-  RefreshCw,
-  ChevronDown,
-  ChevronUp,
-  Copy,
-  Check,
+    Search,
+    Database,
+    RefreshCw,
+    ChevronDown,
+    ChevronUp,
+    Copy,
+    Check,
 } from "lucide-react";
 
 import NavigationMenu from "../components/NavigationMenu";
 import SiteFooter from "../components/SiteFooter";
 
-import { getSheetData } from "../api/sicarisLoadouts.js";
+import { getSheetData } from "../api/sicarisRegiments.js";
 
 import "../AppNavigation.css";
 import "./PlanetsPage.css";
+
 
 /*
  * ---------------------------------------------------------------------------
@@ -29,218 +30,206 @@ import "./PlanetsPage.css";
  */
 
 function formatValue(value) {
-  if (
-    value === undefined ||
-    value === null ||
-    value === ""
-  ) {
-    return "—";
-  }
+    if (
+        value === undefined ||
+        value === null ||
+        value === ""
+    ) {
+        return "—";
+    }
 
-  if (typeof value === "object") {
-    return JSON.stringify(value);
-  }
+    if (typeof value === "object") {
+        return JSON.stringify(value);
+    }
 
-  return String(value);
+    return String(value);
 }
 
-function cleanCell(value) {
-  if (
-    value === undefined ||
-    value === null
-  ) {
-    return "";
-  }
 
-  return String(value).trim();
+function normalizeHeader(value) {
+    return String(value ?? "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "_");
 }
 
-function cleanStratagemName(value) {
-  return cleanCell(value)
-    .replace(/\s*\([^)]*\)\s*$/, "")
-    .trim();
-}
-
-const SLOT_PATTERN = /^SLOT\s+(\d+)/i;
 
 /*
- * Convert the Google Sheet into a list of regiment records.
+ * Convert the "Deployed Regiments" sheet into objects.
  *
- * The current sheet is column-oriented:
- *
- *   Row 1 -> regiment name
- *   Row 2+ -> SLOT / category / stratagems
+ * The first row is treated as the header row.
+ * Every subsequent row is one deployed regiment.
  */
 function parseRegiments(rows) {
-  if (
-    !Array.isArray(rows) ||
-    rows.length < 2
-  ) {
-    return [];
-  }
-
-  const columnCount = Math.max(
-    0,
-    ...rows.map((row) =>
-      Array.isArray(row)
-        ? row.length
-        : 0
-    )
-  );
-
-  const regiments = [];
-
-  for (
-    let columnIndex = 0;
-    columnIndex < columnCount;
-    columnIndex += 1
-  ) {
-    const name = cleanCell(
-      rows[1]?.[columnIndex]
-    );
-
-    if (!name) {
-      continue;
-    }
-
-    const slots = [];
-
-    let currentSlot = null;
-    let expectingCategory = false;
-
-    for (
-      let rowIndex = 2;
-      rowIndex < rows.length;
-      rowIndex += 1
+    if (
+        !Array.isArray(rows) ||
+        rows.length < 2
     ) {
-      const value = cleanCell(
-        rows[rowIndex]?.[columnIndex]
-      );
-
-      if (!value) {
-        continue;
-      }
-
-      const slotMatch =
-        value.match(SLOT_PATTERN);
-
-      /*
-       * New slot.
-       */
-      if (slotMatch) {
-        const categoryFromSlot =
-          value
-            .replace(
-              SLOT_PATTERN,
-              ""
-            )
-            .trim();
-
-        currentSlot = {
-          number: Number(
-            slotMatch[1]
-          ),
-          label:
-            `SLOT ${slotMatch[1]}`,
-          category:
-            categoryFromSlot,
-          items: [],
+        return {
+            headers: [],
+            regiments: [],
         };
-
-        slots.push(currentSlot);
-
-        expectingCategory =
-          !categoryFromSlot;
-
-        continue;
-      }
-
-      /*
-       * Some rows contain the category
-       * immediately after "SLOT X".
-       */
-      if (
-        currentSlot &&
-        expectingCategory
-      ) {
-        currentSlot.category =
-          value;
-
-        expectingCategory =
-          false;
-
-        continue;
-      }
-
-      /*
-       * Everything after the category
-       * is treated as an item.
-       */
-      if (currentSlot) {
-        const itemName =
-          cleanStratagemName(
-            value
-          );
-
-        if (itemName) {
-          currentSlot.items.push({
-            name: itemName,
-            category:
-              currentSlot.category,
-          });
-        }
-      }
     }
 
-    const validSlots =
-      slots.filter(
-        (slot) =>
-          Boolean(slot.category)
-      );
+    /*
+     * The first sheet column is intentionally
+     * excluded from the database table.
+     *
+     * Sheet columns:
+     * 0 = hidden
+     * 1 = displayed as-is
+     * 2 = displayed as-is
+     * 3 = FDP
+     * 4 = Warbonds Greenlight
+     * 5 = Surplus
+     * 6 = Deployment
+     */
 
-    const categories = [
-      ...new Set(
-        validSlots
-          .map(
-            (slot) =>
-              slot.category
-          )
-          .filter(Boolean)
-      ),
+    const sheetHeaders = rows[0] || [];
+
+    const headers = [
+        {
+            index: 1,
+            label:
+                String(
+                    sheetHeaders[1] ?? ""
+                ).trim() || "COLUMN 2",
+            key: "column_2",
+        },
+        {
+            index: 2,
+            label:
+                String(
+                    sheetHeaders[2] ?? ""
+                ).trim() || "COLUMN 3",
+            key: "column_3",
+        },
+        {
+            index: 3,
+            label: "FDP",
+            key: "fdp",
+        },
+        {
+            index: 8,
+            label: "Warbonds Greenlight",
+            key: "warbonds_greenlight",
+        },
+        {
+            index: 12,
+            label: "Surplus",
+            key: "surplus",
+        },
+        {
+            index: 13,
+            label: "Deployment",
+            key: "deployment",
+        },
     ];
 
-    const items = validSlots.flatMap(
-      (slot) => slot.items
-    );
+    const regiments = rows
+        .slice(1)
+        .filter((row) =>
+            Array.isArray(row) &&
+            row.some(
+                (value) =>
+                    value !== null &&
+                    value !== undefined &&
+                    String(value).trim() !== ""
+            )
+        )
+        .map((row, rowIndex) => {
+            const data = {};
 
-    regiments.push({
-      index: regiments.length + 1,
-      name,
-      slots: validSlots,
-      categories,
-      items,
-      itemCount: items.length,
-      slotCount: validSlots.length,
+            headers.forEach(
+                ({
+                    index,
+                    key,
+                }) => {
+                    data[key] =
+                        row[index] ??
+                        null;
+                }
+            );
 
-      /*
-       * Keep the original column data
-       * available for the raw-data viewer.
-       */
-      raw: {
-        name,
-        columnIndex,
-        rows: rows.map(
-          (row) =>
-            row?.[columnIndex] ??
-            null
-        ),
-        slots: validSlots,
-      },
-    });
-  }
+            return {
+                index: rowIndex + 1,
+                data,
+                raw: row,
+            };
+        });
 
-  return regiments;
+    return {
+        headers,
+        regiments,
+    };
 }
+
+
+/*
+ * Find a useful value from a row.
+ *
+ * This lets the page identify the regiment name without
+ * requiring a specific capitalization/spelling in the sheet.
+ */
+function getRegimentName(
+    regiment,
+    headers
+) {
+    const preferredKeys = [
+        "regiment",
+        "regiment_name",
+        "name",
+        "unit",
+        "unit_name",
+    ];
+
+    for (
+        const preferredKey of preferredKeys
+    ) {
+        const header =
+            headers.find(
+                (item) =>
+                    item.key ===
+                    preferredKey
+            );
+
+        if (header) {
+            const value =
+                regiment.data[
+                header.key
+                ];
+
+            if (
+                value !== null &&
+                value !== undefined &&
+                String(value).trim() !== ""
+            ) {
+                return String(value);
+            }
+        }
+    }
+
+    /*
+     * Fall back to the first populated cell.
+     */
+    for (const header of headers) {
+        const value =
+            regiment.data[
+            header.key
+            ];
+
+        if (
+            value !== null &&
+            value !== undefined &&
+            String(value).trim() !== ""
+        ) {
+            return String(value);
+        }
+    }
+
+    return `REGIMENT ${regiment.index}`;
+}
+
 
 /*
  * ---------------------------------------------------------------------------
@@ -248,100 +237,169 @@ function parseRegiments(rows) {
  * ---------------------------------------------------------------------------
  */
 
-function RawData({ regiment }) {
-  const [open, setOpen] =
-    useState(false);
+function RawData({
+    regiment,
+    headers,
+}) {
+    const [open, setOpen] =
+        useState(false);
 
-  const [copied, setCopied] =
-    useState(false);
+    const [copied, setCopied] =
+        useState(false);
 
-  const rawData = useMemo(
-    () =>
-      JSON.stringify(
-        regiment?.raw ??
-          regiment,
-        null,
-        2
-      ),
-    [regiment]
-  );
+    const rawData = useMemo(() => {
+        const data = {};
 
-  const copyRawData =
-    async () => {
-      try {
-        await navigator.clipboard.writeText(
-          rawData
-        );
-
-        setCopied(true);
-
-        window.setTimeout(
-          () => {
-            setCopied(false);
-          },
-          1500
-        );
-      } catch {
-        /*
-         * Clipboard may be unavailable
-         * in some browsers.
-         */
-      }
-    };
-
-  return (
-    <div className="planet-raw">
-      <div className="planet-raw-actions">
-        <button
-          type="button"
-          className="planet-raw-toggle"
-          onClick={() =>
-            setOpen(
-              (value) =>
-                !value
-            )
-          }
-        >
-          {open ? (
-            <ChevronUp size={15} />
-          ) : (
-            <ChevronDown size={15} />
-          )}
-
-          {open
-            ? "HIDE RAW DATA"
-            : "VIEW RAW DATA"}
-        </button>
-
-        {open && (
-          <button
-            type="button"
-            className="planet-copy-button"
-            onClick={
-              copyRawData
+        headers.forEach(
+            ({
+                key,
+                label,
+            }) => {
+                data[label] =
+                    regiment.data[key] ??
+                    null;
             }
-          >
-            {copied ? (
-              <Check size={14} />
-            ) : (
-              <Copy size={14} />
+        );
+
+        return JSON.stringify(
+            data,
+            null,
+            2
+        );
+    }, [
+        regiment,
+        headers,
+    ]);
+
+    const copyRawData =
+        async () => {
+            try {
+                await navigator.clipboard.writeText(
+                    rawData
+                );
+
+                setCopied(true);
+
+                window.setTimeout(
+                    () => {
+                        setCopied(false);
+                    },
+                    1500
+                );
+            } catch {
+                // Clipboard may be unavailable.
+            }
+        };
+
+    return (
+        <div className="planet-raw">
+            <div className="planet-raw-actions">
+                <button
+                    type="button"
+                    className="planet-raw-toggle"
+                    onClick={() =>
+                        setOpen(
+                            (value) =>
+                                !value
+                        )
+                    }
+                >
+                    {open ? (
+                        <ChevronUp size={15} />
+                    ) : (
+                        <ChevronDown size={15} />
+                    )}
+
+                    {open
+                        ? "HIDE RAW DATA"
+                        : "VIEW RAW DATA"}
+                </button>
+
+                {open && (
+                    <button
+                        type="button"
+                        className="planet-copy-button"
+                        onClick={
+                            copyRawData
+                        }
+                    >
+                        {copied ? (
+                            <Check size={14} />
+                        ) : (
+                            <Copy size={14} />
+                        )}
+
+                        {copied
+                            ? "COPIED"
+                            : "COPY"}
+                    </button>
+                )}
+            </div>
+
+            {open && (
+                <pre className="planet-raw-content">
+                    {rawData}
+                </pre>
             )}
-
-            {copied
-              ? "COPIED"
-              : "COPY"}
-          </button>
-        )}
-      </div>
-
-      {open && (
-        <pre className="planet-raw-content">
-          {rawData}
-        </pre>
-      )}
-    </div>
-  );
+        </div>
+    );
 }
+
+
+function renderCellValue(
+    value,
+    columnKey
+) {
+    if (
+        value === undefined ||
+        value === null ||
+        String(value).trim() === ""
+    ) {
+        return "—";
+    }
+
+    /*
+     * Warbonds Greenlight can contain
+     * multiple warbonds separated by
+     * commas, newlines, semicolons, etc.
+     */
+    if (
+        columnKey ===
+        "warbonds_greenlight"
+    ) {
+        const warbonds = String(value)
+            .split(/[\n,;|]+/)
+            .map((item) =>
+                item.trim()
+            )
+            .filter(Boolean);
+
+        if (!warbonds.length) {
+            return "—";
+        }
+
+        return (
+            <div className="regiment-warbonds">
+                {warbonds.map(
+                    (
+                        warbond,
+                        index
+                    ) => (
+                        <span
+                            className="regiment-warbond"
+                            key={`${warbond}-${index}`}
+                        >
+                            {warbond}
+                        </span>
+                    )
+                )}
+            </div>
+        );
+    }
+
+    return formatValue(value);
+}
+
 
 /*
  * ---------------------------------------------------------------------------
@@ -350,442 +408,485 @@ function RawData({ regiment }) {
  */
 
 export default function RegimentsPage() {
-  const [rows, setRows] =
-    useState([]);
+    const [rows, setRows] =
+        useState([]);
 
-  const [loading, setLoading] =
-    useState(true);
+    const [loading, setLoading] =
+        useState(true);
 
-  const [refreshing, setRefreshing] =
-    useState(false);
+    const [refreshing, setRefreshing] =
+        useState(false);
 
-  const [error, setError] =
-    useState(null);
+    const [error, setError] =
+        useState(null);
 
-  const [search, setSearch] =
-    useState("");
+    const [search, setSearch] =
+        useState("");
 
-  /*
-   * -------------------------------------------------------------------------
-   * LOAD DATA
-   * -------------------------------------------------------------------------
-   */
 
-  const loadRegiments =
-    async ({
-      initial = false,
-    } = {}) => {
-      try {
-        if (initial) {
-          setLoading(true);
-        } else {
-          setRefreshing(true);
-        }
+    /*
+     * -------------------------------------------------------------------------
+     * LOAD DEPLOYED REGIMENTS
+     * -------------------------------------------------------------------------
+     */
 
-        setError(null);
+    const loadRegiments =
+        async ({
+            initial = false,
+        } = {}) => {
+            try {
+                if (initial) {
+                    setLoading(true);
+                } else {
+                    setRefreshing(true);
+                }
 
-        const data =
-          await getSheetData();
+                setError(null);
 
-        setRows(
-          Array.isArray(data)
-            ? data
-            : []
-        );
-      } catch (err) {
-        console.error(
-          "Failed to load regiment data:",
-          err
-        );
+                /*
+                 * IMPORTANT:
+                 *
+                 * This is the API from sicarisRegiments.js,
+                 * which points to the "Deployed Regiments"
+                 * Google Sheet.
+                 */
+                const data =
+                    await getSheetData();
 
-        setError(
-          err?.message ||
-            "Unable to retrieve regiment data."
-        );
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    };
+                setRows(
+                    Array.isArray(data)
+                        ? data
+                        : []
+                );
+            } catch (err) {
+                console.error(
+                    "Failed to load deployed regiments:",
+                    err
+                );
 
-  useEffect(() => {
-    loadRegiments({
-      initial: true,
-    });
-  }, []);
-
-  /*
-   * -------------------------------------------------------------------------
-   * PARSE
-   * -------------------------------------------------------------------------
-   */
-
-  const regiments =
-    useMemo(
-      () =>
-        parseRegiments(rows),
-      [rows]
-    );
-
-  /*
-   * -------------------------------------------------------------------------
-   * SEARCH
-   * -------------------------------------------------------------------------
-   */
-
-  const filteredRegiments =
-    useMemo(() => {
-      const query =
-        search
-          .trim()
-          .toLowerCase();
-
-      if (!query) {
-        return regiments;
-      }
-
-      return regiments.filter(
-        (regiment) => {
-          const values = [
-            regiment.index,
-            regiment.name,
-            regiment.slotCount,
-            regiment.itemCount,
-            ...regiment.categories,
-            ...regiment.items.map(
-              (item) =>
-                item.name
-            ),
-          ];
-
-          return values.some(
-            (value) =>
-              String(
-                value ?? ""
-              )
-                .toLowerCase()
-                .includes(
-                  query
-                )
-          );
-        }
-      );
-    }, [
-      regiments,
-      search,
-    ]);
-
-  /*
-   * -------------------------------------------------------------------------
-   * RENDER
-   * -------------------------------------------------------------------------
-   */
-
-  return (
-    <div className="planets-page">
-
-      {/* ----------------------------------------------------------------- */}
-      {/* HEADER                                                            */}
-      {/* ----------------------------------------------------------------- */}
-
-      <header className="planets-topbar">
-        <div className="planets-logo">
-          <Database size={23} />
-
-          <div>
-            <span>
-              S.E.A.F. - L.E.M.O.N
-            </span>
-
-            <small>
-              REGIMENT DATABASE
-            </small>
-          </div>
-        </div>
-
-        <div className="planets-status">
-          <span>
-            DATABASE STATUS
-          </span>
-
-          <strong>
-            {loading
-              ? "SYNCING"
-              : error
-                ? "OFFLINE"
-                : "ONLINE"}
-          </strong>
-        </div>
-
-        <NavigationMenu />
-      </header>
-
-      <main className="planets-content">
-
-        {/* --------------------------------------------------------------- */}
-        {/* HEADING                                                         */}
-        {/* --------------------------------------------------------------- */}
-
-        <section className="planets-heading">
-          <div>
-            <div className="planets-kicker">
-              <Database size={14} />
-
-              FORCE ARCHIVE // LIVE DATA
-            </div>
-
-            <h1>
-              REGIMENT DATABASE
-            </h1>
-
-            <p>
-              Regiment identifiers,
-              authorized equipment,
-              specialties, categories
-              and stratagem assignments.
-            </p>
-          </div>
-
-          <div className="planets-count">
-            <strong>
-              {
-                filteredRegiments.length
-              }
-            </strong>
-
-            <span>
-              OF{" "}
-              {regiments.length}{" "}
-              REGIMENTS
-            </span>
-          </div>
-        </section>
-
-        {/* --------------------------------------------------------------- */}
-        {/* CONTROLS                                                        */}
-        {/* --------------------------------------------------------------- */}
-
-        <section className="planets-controls">
-          <div className="planet-search">
-            <Search size={17} />
-
-            <input
-              type="search"
-              value={search}
-              onChange={(
-                event
-              ) =>
-                setSearch(
-                  event.target
-                    .value
-                )
-              }
-              placeholder="SEARCH REGIMENT, CATEGORY OR STRATAGEM..."
-              aria-label="Search regiments"
-            />
-          </div>
-
-          <div />
-
-          <div />
-
-          <button
-            type="button"
-            className="planet-refresh"
-            onClick={() =>
-              loadRegiments()
+                setError(
+                    err?.message ||
+                    "Unable to retrieve deployed regiment data."
+                );
+            } finally {
+                setLoading(false);
+                setRefreshing(false);
             }
-            disabled={
-              refreshing
+        };
+
+
+    useEffect(() => {
+        loadRegiments({
+            initial: true,
+        });
+    }, []);
+
+
+    /*
+     * -------------------------------------------------------------------------
+     * PARSE
+     * -------------------------------------------------------------------------
+     */
+
+    const {
+        headers,
+        regiments,
+    } =
+        useMemo(
+            () =>
+                parseRegiments(rows),
+            [rows]
+        );
+
+
+    /*
+     * -------------------------------------------------------------------------
+     * SEARCH
+     * -------------------------------------------------------------------------
+     */
+
+    const filteredRegiments =
+        useMemo(() => {
+            const query =
+                search
+                    .trim()
+                    .toLowerCase();
+
+            if (!query) {
+                return regiments;
             }
-            title="Refresh regiment data"
-          >
-            <RefreshCw
-              size={16}
-              className={
-                refreshing
-                  ? "planet-refresh-spinning"
-                  : ""
-              }
-            />
 
-            <span>
-              REFRESH
-            </span>
-          </button>
-        </section>
+            return regiments.filter(
+                (regiment) => {
+                    return headers.some(
+                        ({
+                            key,
+                        }) => {
+                            const value =
+                                regiment.data[
+                                key
+                                ];
 
-        {/* --------------------------------------------------------------- */}
-        {/* LOADING                                                         */}
-        {/* --------------------------------------------------------------- */}
+                            return String(
+                                value ?? ""
+                            )
+                                .toLowerCase()
+                                .includes(
+                                    query
+                                );
+                        }
+                    );
+                }
+            );
+        }, [
+            regiments,
+            headers,
+            search,
+        ]);
 
-        {loading && (
-          <div className="planets-message">
-            <RefreshCw
-              size={17}
-              className="planet-refresh-spinning"
-            />
 
-            <span>
-              SYNCHRONIZING REGIMENT DATA...
-            </span>
-          </div>
-        )}
+    /*
+     * -------------------------------------------------------------------------
+     * RENDER
+     * -------------------------------------------------------------------------
+     */
 
-        {/* --------------------------------------------------------------- */}
-        {/* ERROR                                                           */}
-        {/* --------------------------------------------------------------- */}
+    return (
+        <div className="planets-page">
 
-        {error && (
-          <div className="planets-message planets-message--error">
-            <strong>
-              API ERROR
-            </strong>
+            {/* ----------------------------------------------------------------- */}
+            {/* HEADER                                                            */}
+            {/* ----------------------------------------------------------------- */}
 
-            <span>
-              {error}
-            </span>
+            <header className="planets-topbar">
+                <div className="planets-logo">
+                    <Database size={23} />
 
-            <button
-              type="button"
-              onClick={() =>
-                loadRegiments()
-              }
-            >
-              RETRY
-            </button>
-          </div>
-        )}
+                    <div>
+                        <span>
+                            S.E.A.F. - L.E.M.O.N
+                        </span>
 
-        {/* --------------------------------------------------------------- */}
-        {/* TABLE                                                           */}
-        {/* --------------------------------------------------------------- */}
+                        <small>
+                            REGIMENT DATABASE
+                        </small>
+                    </div>
+                </div>
 
-        {!loading &&
-          !error && (
-            <section className="planet-table-shell">
-              <div className="planet-table-scroll">
+                <div className="planets-status">
+                    <span>
+                        DATABASE STATUS
+                    </span>
 
-                <table className="planet-table">
+                    <strong>
+                        {loading
+                            ? "SYNCING"
+                            : error
+                                ? "OFFLINE"
+                                : "ONLINE"}
+                    </strong>
+                </div>
 
-                  <thead>
-                    <tr>
-                      <th>
-                        ID
-                      </th>
+                <NavigationMenu />
+            </header>
 
-                      <th>
-                        REGIMENT
-                      </th>
 
-                      <th>
-                        SLOTS
-                      </th>
+            <main className="planets-content">
 
-                      <th>
-                        CATEGORIES
-                      </th>
+                {/* ----------------------------------------------------------------- */}
+                {/* HEADING                                                           */}
+                {/* ----------------------------------------------------------------- */}
 
-                      <th>
-                        STRATAGEMS
-                      </th>
-                    </tr>
-                  </thead>
+                <section className="planets-heading">
+                    <div>
+                        <div className="planets-kicker">
+                            <Database size={14} />
 
-                  <tbody>
-                    {filteredRegiments.map(
-                      (
-                        regiment
-                      ) => (
-                        <tr
-                          key={`${regiment.index}-${regiment.name}`}
-                        >
-                          <td className="planet-index">
-                            {formatValue(
-                              regiment.index
-                            )}
-                          </td>
+                            GALACTIC ARCHIVE // LIVE DATA
+                        </div>
 
-                          <td className="planet-name">
-                            {formatValue(
-                              regiment.name
-                            )}
-                          </td>
+                        <h1>
+                            REGIMENT DATABASE
+                        </h1>
 
-                          <td className="planet-coordinate">
-                            {formatValue(
-                              regiment.slotCount
-                            )}
-                          </td>
+                        <p>
+                            Deployed regiment
+                            identifiers, locations,
+                            commanders and operational
+                            status.
+                        </p>
+                    </div>
 
-                          <td className="planet-biome">
-                            {regiment.categories
-                              .length >
-                            0
-                              ? regiment.categories.join(
-                                  " / "
+                    <div className="planets-count">
+                        <strong>
+                            {
+                                filteredRegiments.length
+                            }
+                        </strong>
+
+                        <span>
+                            OF{" "}
+                            {regiments.length}{" "}
+                            REGIMENTS
+                        </span>
+                    </div>
+                </section>
+
+
+                {/* ----------------------------------------------------------------- */}
+                {/* CONTROLS                                                          */}
+                {/* ----------------------------------------------------------------- */}
+
+                <section className="planets-controls">
+
+                    <div className="planet-search">
+                        <Search size={17} />
+
+                        <input
+                            type="search"
+                            value={search}
+                            onChange={(
+                                event
+                            ) =>
+                                setSearch(
+                                    event.target
+                                        .value
                                 )
-                              : "—"}
-                          </td>
+                            }
+                            placeholder="SEARCH DEPLOYED REGIMENTS..."
+                            aria-label="Search deployed regiments"
+                        />
+                    </div>
 
-                          <td className="planet-coordinate">
-                            {formatValue(
-                              regiment.itemCount
-                            )}
-                          </td>
-                        </tr>
-                      )
+                    <div />
+
+                    <div />
+
+                    <button
+                        type="button"
+                        className="planet-refresh"
+                        onClick={() =>
+                            loadRegiments()
+                        }
+                        disabled={
+                            refreshing
+                        }
+                        title="Refresh deployed regiment data"
+                    >
+                        <RefreshCw
+                            size={16}
+                            className={
+                                refreshing
+                                    ? "planet-refresh-spinning"
+                                    : ""
+                            }
+                        />
+
+                        <span>
+                            REFRESH
+                        </span>
+                    </button>
+
+                </section>
+
+
+                {/* ----------------------------------------------------------------- */}
+                {/* LOADING                                                           */}
+                {/* ----------------------------------------------------------------- */}
+
+                {loading && (
+                    <div className="planets-message">
+                        <RefreshCw
+                            size={17}
+                            className="planet-refresh-spinning"
+                        />
+
+                        <span>
+                            SYNCHRONIZING DEPLOYED
+                            REGIMENT DATA...
+                        </span>
+                    </div>
+                )}
+
+
+                {/* ----------------------------------------------------------------- */}
+                {/* ERROR                                                             */}
+                {/* ----------------------------------------------------------------- */}
+
+                {error && (
+                    <div className="planets-message planets-message--error">
+                        <strong>
+                            API ERROR
+                        </strong>
+
+                        <span>
+                            {error}
+                        </span>
+
+                        <button
+                            type="button"
+                            onClick={() =>
+                                loadRegiments()
+                            }
+                        >
+                            RETRY
+                        </button>
+                    </div>
+                )}
+
+
+                {/* ----------------------------------------------------------------- */}
+                {/* TABLE                                                             */}
+                {/* ----------------------------------------------------------------- */}
+
+                {!loading &&
+                    !error && (
+                        <section className="planet-table-shell">
+
+                            <div className="planet-table-scroll">
+
+                                <table className="planet-table">
+
+                                    <thead>
+                                        <tr>
+
+                                            <th>
+                                                ID
+                                            </th>
+
+                                            {headers.map(
+                                                ({
+                                                    key,
+                                                    label,
+                                                }) => (
+                                                    <th
+                                                        key={key}
+                                                    >
+                                                        {label}
+                                                    </th>
+                                                )
+                                            )}
+
+                                        </tr>
+                                    </thead>
+
+
+                                    <tbody>
+
+                                        {filteredRegiments.map(
+                                            (
+                                                regiment
+                                            ) => (
+                                                <tr
+                                                    key={`${regiment.index}-${getRegimentName(
+                                                        regiment,
+                                                        headers
+                                                    )}`}
+                                                >
+
+                                                    <td className="planet-index">
+                                                        {
+                                                            regiment.index
+                                                        }
+                                                    </td>
+
+
+                                                    {headers.map(
+                                                        ({
+                                                            key,
+                                                        }) => (
+                                                            <td
+                                                                key={key}
+                                                                className={
+                                                                    key ===
+                                                                        "warbonds_greenlight"
+                                                                        ? "regiment-warbonds-cell"
+                                                                        : ""
+                                                                }
+                                                            >
+                                                                {renderCellValue(
+                                                                    regiment.data[key],
+                                                                    key
+                                                                )}
+                                                            </td>
+                                                        )
+                                                    )}
+
+                                                </tr>
+                                            )
+                                        )}
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+
+                            {filteredRegiments.length ===
+                                0 && (
+                                    <div className="planet-empty">
+                                        NO DEPLOYED REGIMENTS
+                                        MATCH THE CURRENT
+                                        SEARCH.
+                                    </div>
+                                )}
+
+                        </section>
                     )}
-                  </tbody>
 
-                </table>
 
-              </div>
+                {/* ----------------------------------------------------------------- */}
+                {/* RAW DATA                                                          */}
+                {/* ----------------------------------------------------------------- */}
 
-              {filteredRegiments.length ===
-                0 && (
-                <div className="planet-empty">
-                  NO REGIMENTS MATCH
-                  THE CURRENT SEARCH.
-                </div>
-              )}
-            </section>
-          )}
+                {!loading &&
+                    !error &&
+                    filteredRegiments.map(
+                        (
+                            regiment
+                        ) => (
+                            <div
+                                key={`raw-${regiment.index}`}
+                                className="planet-debug-row"
+                            >
 
-        {/* --------------------------------------------------------------- */}
-        {/* RAW DATA                                                        */}
-        {/* --------------------------------------------------------------- */}
+                                <div className="planet-debug-heading">
 
-        {!loading &&
-          !error &&
-          filteredRegiments.map(
-            (regiment) => (
-              <div
-                key={`raw-${regiment.index}-${regiment.name}`}
-                className="planet-debug-row"
-              >
-                <div className="planet-debug-heading">
-                  <span>
-                    {regiment.index}
-                  </span>
+                                    <span>
+                                        {
+                                            regiment.index
+                                        }
+                                    </span>
 
-                  <strong>
-                    {regiment.name}
-                  </strong>
-                </div>
+                                    <strong>
+                                        {
+                                            getRegimentName(
+                                                regiment,
+                                                headers
+                                            )
+                                        }
+                                    </strong>
 
-                <RawData
-                  regiment={
-                    regiment
-                  }
-                />
-              </div>
-            )
-          )}
+                                </div>
 
-      </main>
+                                <RawData
+                                    regiment={
+                                        regiment
+                                    }
+                                    headers={
+                                        headers
+                                    }
+                                />
 
-      <SiteFooter />
-    </div>
-  );
+                            </div>
+                        )
+                    )}
+
+            </main>
+
+            <SiteFooter />
+
+        </div>
+    );
 }

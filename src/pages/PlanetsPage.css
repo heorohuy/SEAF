@@ -744,3 +744,36 @@
     grid-column: auto;
   }
 }
+
+.regiment-warbonds-cell {
+  min-width: 190px;
+  max-width: 260px;
+  vertical-align: top;
+  white-space: normal;
+}
+
+.regiment-warbonds {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.regiment-warbond {
+  display: block;
+  width: 100%;
+  padding: 3px 7px;
+
+  color: #d9e6d0;
+  background: rgba(117, 142, 91, 0.12);
+
+  border-left: 2px solid
+    rgba(142, 174, 108, 0.65);
+
+  font-size: 0.78rem;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
