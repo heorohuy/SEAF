@@ -145,7 +145,7 @@ export default function NavigationMenu() {
 
           <nav className="navigation-menu-links">
             <NavLink
-              to="/regiments"
+              to="/regimentsloadout"
               className={({ isActive }) =>
                 `navigation-menu-link ${isActive
                   ? 'navigation-menu-link--active'

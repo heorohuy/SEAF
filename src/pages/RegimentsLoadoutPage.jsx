@@ -11,7 +11,7 @@ import {
   Shield,
 } from "lucide-react";
 
-import NavigationMenu from "../components/NavigationMenu";
+import NavigationMenu from "../components/NavigationMenu.jsx";
 import {
   getSheetData,
 } from "../api/sicarisLoadouts.js";
@@ -23,8 +23,8 @@ import {
   clearStratagemCache,
 } from "../api/stratagems.js";
 
-import "./RegimentsPage.css";
-import SiteFooter from "../components/SiteFooter";
+import "./RegimentsLoadoutPage.css";
+import SiteFooter from "../components/SiteFooter.jsx";
 
 
 /*
@@ -1098,7 +1098,7 @@ function SlotSection({
  * ---------------------------------------------------------------------------
  */
 
-export default function RegimentsPage() {
+export default function RegimentsLoadoutPage() {
   const [
     rows,
     setRows,
