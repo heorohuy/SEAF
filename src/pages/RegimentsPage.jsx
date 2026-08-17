@@ -20,7 +20,7 @@ import SiteFooter from "../components/SiteFooter";
 import { getSheetData } from "../api/sicarisRegiments.js";
 
 import "../AppNavigation.css";
-import "./PlanetsPage.css";
+import "./RegimentsPage.css";
 
 
 /*
@@ -154,7 +154,6 @@ function parseRegiments(rows) {
             return {
                 index: rowIndex + 1,
                 data,
-                raw: row,
             };
         });
 
@@ -229,122 +228,6 @@ function getRegimentName(
 
     return `REGIMENT ${regiment.index}`;
 }
-
-
-/*
- * ---------------------------------------------------------------------------
- * RAW DATA
- * ---------------------------------------------------------------------------
- */
-
-function RawData({
-    regiment,
-    headers,
-}) {
-    const [open, setOpen] =
-        useState(false);
-
-    const [copied, setCopied] =
-        useState(false);
-
-    const rawData = useMemo(() => {
-        const data = {};
-
-        headers.forEach(
-            ({
-                key,
-                label,
-            }) => {
-                data[label] =
-                    regiment.data[key] ??
-                    null;
-            }
-        );
-
-        return JSON.stringify(
-            data,
-            null,
-            2
-        );
-    }, [
-        regiment,
-        headers,
-    ]);
-
-    const copyRawData =
-        async () => {
-            try {
-                await navigator.clipboard.writeText(
-                    rawData
-                );
-
-                setCopied(true);
-
-                window.setTimeout(
-                    () => {
-                        setCopied(false);
-                    },
-                    1500
-                );
-            } catch {
-                // Clipboard may be unavailable.
-            }
-        };
-
-    return (
-        <div className="planet-raw">
-            <div className="planet-raw-actions">
-                <button
-                    type="button"
-                    className="planet-raw-toggle"
-                    onClick={() =>
-                        setOpen(
-                            (value) =>
-                                !value
-                        )
-                    }
-                >
-                    {open ? (
-                        <ChevronUp size={15} />
-                    ) : (
-                        <ChevronDown size={15} />
-                    )}
-
-                    {open
-                        ? "HIDE RAW DATA"
-                        : "VIEW RAW DATA"}
-                </button>
-
-                {open && (
-                    <button
-                        type="button"
-                        className="planet-copy-button"
-                        onClick={
-                            copyRawData
-                        }
-                    >
-                        {copied ? (
-                            <Check size={14} />
-                        ) : (
-                            <Copy size={14} />
-                        )}
-
-                        {copied
-                            ? "COPIED"
-                            : "COPY"}
-                    </button>
-                )}
-            </div>
-
-            {open && (
-                <pre className="planet-raw-content">
-                    {rawData}
-                </pre>
-            )}
-        </div>
-    );
-}
-
 
 function renderCellValue(
     value,
@@ -745,14 +628,20 @@ export default function RegimentsPage() {
 
                             <div className="planet-table-scroll">
 
-                                <table className="planet-table">
+                                <table className="planet-table regiment-table">
+
+                                    <colgroup>
+                                        <col className="regiment-name-column" />
+
+                                        {headers.slice(1).map(
+                                            ({ key }) => (
+                                                <col key={key} />
+                                            )
+                                        )}
+                                    </colgroup>
 
                                     <thead>
                                         <tr>
-
-                                            <th>
-                                                ID
-                                            </th>
 
                                             {headers.map(
                                                 ({
@@ -783,12 +672,6 @@ export default function RegimentsPage() {
                                                         headers
                                                     )}`}
                                                 >
-
-                                                    <td className="planet-index">
-                                                        {
-                                                            regiment.index
-                                                        }
-                                                    </td>
 
 
                                                     {headers.map(
@@ -833,54 +716,6 @@ export default function RegimentsPage() {
                                 )}
 
                         </section>
-                    )}
-
-
-                {/* ----------------------------------------------------------------- */}
-                {/* RAW DATA                                                          */}
-                {/* ----------------------------------------------------------------- */}
-
-                {!loading &&
-                    !error &&
-                    filteredRegiments.map(
-                        (
-                            regiment
-                        ) => (
-                            <div
-                                key={`raw-${regiment.index}`}
-                                className="planet-debug-row"
-                            >
-
-                                <div className="planet-debug-heading">
-
-                                    <span>
-                                        {
-                                            regiment.index
-                                        }
-                                    </span>
-
-                                    <strong>
-                                        {
-                                            getRegimentName(
-                                                regiment,
-                                                headers
-                                            )
-                                        }
-                                    </strong>
-
-                                </div>
-
-                                <RawData
-                                    regiment={
-                                        regiment
-                                    }
-                                    headers={
-                                        headers
-                                    }
-                                />
-
-                            </div>
-                        )
                     )}
 
             </main>
