@@ -48,7 +48,7 @@ function getNumericPositionValue(...values) {
 }
 
 function hasValidMapPosition(id, x, y) {
-  if (id === 0){
+  if (id === 0) {
     return true;
   }
 
@@ -101,15 +101,15 @@ function getBiomeValue(raw) {
 function normalizePlanet(raw, info) {
 
   const normalizedRawX = getNumericPositionValue(
-    info?.position?.x,
-    raw?.position?.x,
     raw?.positionX,
+    raw?.position?.x,
+    info?.position?.x,
   );
 
   const normalizedRawY = getNumericPositionValue(
-    info?.position?.y,
-    raw?.position?.y,
     raw?.positionY,
+    raw?.position?.y,
+    info?.position?.y,
   );
 
   const hasPosition = hasValidMapPosition(
@@ -118,23 +118,21 @@ function normalizePlanet(raw, info) {
     normalizedRawY,
   );
 
-  // const x =
-  //   normalizedRawX !== null
-  //     ? clamp(
-  //         (normalizedRawX + 1) * 380 + 100,
-  //         40,
-  //         920,
-  //       )
-  //     : null;
-
-  // const y =
-  //   normalizedRawY !== null
-  //     ? clamp(
-  //         (normalizedRawY + 1) * 380 + 100,
-  //         40,
-  //         920,
-  //       )
-  //     : null;
+  if (
+    !hasPosition
+  ) {
+    console.warn(
+      'Planet has no usable map position:',
+      {
+        index: raw.index,
+        name: raw.name,
+        positionX: raw.positionX,
+        positionY: raw.positionY,
+        rawPosition: raw.position,
+        warInfoPosition: info?.position,
+      },
+    );
+  }
 
   const x = hasPosition
     ? clamp(
@@ -496,8 +494,8 @@ export async function fetchGalacticMap() {
 
     const warInfo = warId
       ? await fetchJson(
-          `/raw/api/WarSeason/${warId}/WarInfo`,
-        )
+        `/raw/api/WarSeason/${warId}/WarInfo`,
+      )
       : null;
 
     const planetInfos =
@@ -517,17 +515,17 @@ export async function fetchGalacticMap() {
 
     const planets = Array.isArray(rawPlanets)
       ? Array.from(
-          new Map(
-            rawPlanets.map((raw) => {
-              const planet = normalizePlanet(
-                raw,
-                planetInfoByIndex.get(String(raw.index)),
-              );
+        new Map(
+          rawPlanets.map((raw) => {
+            const planet = normalizePlanet(
+              raw,
+              planetInfoByIndex.get(String(raw.index)),
+            );
 
-              return [planet.name, planet];
-            }),
-          ).values(),
-        )
+            return [planet.name, planet];
+          }),
+        ).values(),
+      )
       : [];
 
     const planetsByIndex =
@@ -549,11 +547,11 @@ export async function fetchGalacticMap() {
 
     const warInfoPayload = warInfo
       ? {
-          warId: warInfo.warId,
-          startDate: warInfo.startDate,
-          endDate: warInfo.endDate,
-          layoutVersion: warInfo.layoutVersion,
-        }
+        warId: warInfo.warId,
+        startDate: warInfo.startDate,
+        endDate: warInfo.endDate,
+        layoutVersion: warInfo.layoutVersion,
+      }
       : null;
 
     return {

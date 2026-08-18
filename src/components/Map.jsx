@@ -36,7 +36,7 @@ export default function GalaxyMap({
   onMouseMove,
   onMouseUp,
   onWheel,
-}) {
+} = {}) {
   const localRef = useRef(null);
   const ref = containerRef || localRef;
 
@@ -91,9 +91,9 @@ export default function GalaxyMap({
 
         points: Array.isArray(sector.points)
           ? sector.points.map(([x, y]) => [
-              x,
-              flipY(y),
-            ])
+            x,
+            flipY(y),
+          ])
           : undefined,
 
         centerY:
@@ -111,17 +111,30 @@ export default function GalaxyMap({
    * ------------------------------------------------------------
    */
 
-  const positionedPlanets = useMemo(
-    () =>
-      (Array.isArray(planets) ? planets : []).filter(
-        (planet) =>
-          typeof planet?.x === 'number' &&
-          Number.isFinite(planet.x) &&
-          typeof planet?.y === 'number' &&
-          Number.isFinite(planet.y),
-      ),
-    [planets],
-  );
+  const positionedPlanets = useMemo(() => {
+    const allPlanets = Array.isArray(planets)
+      ? planets
+      : [];
+
+    const invalid = allPlanets.filter(
+      (planet) =>
+        !Number.isFinite(planet?.x) ||
+        !Number.isFinite(planet?.y),
+    );
+
+    if (invalid.length > 0) {
+      console.warn(
+        `Map discarded ${invalid.length} planets without valid coordinates`,
+        invalid,
+      );
+    }
+
+    return allPlanets.filter(
+      (planet) =>
+        Number.isFinite(planet?.x) &&
+        Number.isFinite(planet?.y),
+    );
+  }, [planets]);
 
   /*
    * ------------------------------------------------------------
@@ -399,10 +412,10 @@ export default function GalaxyMap({
           {routes.map((route) => {
             const ship = Array.isArray(ships)
               ? ships.find(
-                  (candidate) =>
-                    String(candidate.id) ===
-                    String(route.shipId),
-                )
+                (candidate) =>
+                  String(candidate.id) ===
+                  String(route.shipId),
+              )
               : null;
 
             if (!ship) {
@@ -436,10 +449,10 @@ export default function GalaxyMap({
 
             const associatedRegimentIcon =
               associatedPlanetIcons?.[
-                planetNameKey
+              planetNameKey
               ] ||
               associatedPlanetIcons?.[
-                planetIdKey
+              planetIdKey
               ];
 
             const hasSOS =
@@ -492,27 +505,21 @@ export default function GalaxyMap({
           className="ship-orbit-layer"
           filter="url(#ship-glow)"
         >
-          {Array.from(
-            shipsByPlanet.entries(),
-          ).flatMap(
-            ([planetShips]) =>
-              planetShips.map(
-                (ship, shipIndex) => (
-                  <ShipMarker
-                    key={`ship-${ship.id}`}
-                    ship={ship}
-                    shipIndex={shipIndex}
-                    shipCount={planetShips.length}
-                    selected={
-                      String(
-                        selectedShip?.id,
-                      ) ===
-                      String(ship.id)
-                    }
-                    onSelect={onSelectShip}
-                  />
-                ),
-              ),
+          {Array.from(shipsByPlanet.entries()).flatMap(
+            ([planetId, planetShips]) =>
+              planetShips.map((ship, shipIndex) => (
+                <ShipMarker
+                  key={`ship-${ship.id}`}
+                  ship={ship}
+                  shipIndex={shipIndex}
+                  shipCount={planetShips.length}
+                  selected={
+                    String(selectedShip?.id) ===
+                    String(ship.id)
+                  }
+                  onSelect={onSelectShip}
+                />
+              )),
           )}
         </g>
       </svg>

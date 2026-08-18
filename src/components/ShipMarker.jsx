@@ -1,9 +1,10 @@
 // src/components/ShipMarker.jsx
 
 import { getOrbitPosition } from '../api/shipTracking';
+import sprdDestroyerIcon from '../assets/1986-JJ-SEAFICONS-SPRDSTROYER.png';
 
 function getShipImage(ship) {
-  return ship?.image_url || null;
+  return sprdDestroyerIcon;
 }
 
 function getShipLabel(ship) {

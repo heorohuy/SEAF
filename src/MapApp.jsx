@@ -1,8 +1,7 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback, } from 'react';
 import { Crosshair, Shield, Globe, ZoomIn, ZoomOut } from 'lucide-react';
 import GalaxyMap from './components/Map';
 
-import Map from './components/Map';
 import NavigationMenu from './components/NavigationMenu';
 
 import fetchGalacticMap from './api/galacticWar';
