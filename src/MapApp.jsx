@@ -1,6 +1,6 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback, } from 'react';
 import { Crosshair, Shield, Globe, ZoomIn, ZoomOut } from 'lucide-react';
-import Map from './components/Map';
+import GalaxyMap from './components/Map';
 
 import NavigationMenu from './components/NavigationMenu';
 
@@ -728,7 +728,7 @@ export default function App() {
           <AdBanner />
         </div> */}
 
-        <Map
+        <GalaxyMap
           containerRef={mapContainerRef}
           planets={planets}
           connections={connections}
