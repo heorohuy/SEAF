@@ -1,107 +1,268 @@
-import { useRef, useEffect } from 'react';
+// src/components/Map.jsx
+
+import { useRef, useEffect, useMemo } from 'react';
+
 import Planet from './Planet';
 import Sector from './Sector';
+import ShipMarker from './ShipMarker';
+import TransitShip from './TransitShip';
 
-export default function Map({
+import {
+  buildPlanetLookup,
+  normalizeKey,
+  resolvePlanetLocation,
+} from '../api/shipTracking';
+
+const SVG_SIZE = 960;
+const SVG_CENTER = SVG_SIZE / 2;
+
+export default function GalaxyMap({
   containerRef,
   planets,
   connections,
   sectors,
   selectedPlanet,
+  selectedShip,
+  ships,
+  shipRoutes,
   associatedFobKeys,
   associatedPlanetIcons,
   sosLocations,
   onSelect,
+  onSelectShip,
   transformStyle,
   onMouseDown,
   onMouseMove,
   onMouseUp,
-  onWheel
+  onWheel,
 }) {
   const localRef = useRef(null);
   const ref = containerRef || localRef;
 
+  /*
+   * ------------------------------------------------------------
+   * Mouse wheel handling
+   * ------------------------------------------------------------
+   */
+
   useEffect(() => {
     const node = ref.current;
-    if (!node || !onWheel) return;
 
-    const handler = (e) => {
-      e.preventDefault();
-      onWheel(e);
+    if (!node || !onWheel) {
+      return undefined;
+    }
+
+    const handler = (event) => {
+      event.preventDefault();
+      onWheel(event);
     };
 
-    node.addEventListener('wheel', handler, { passive: false });
+    node.addEventListener('wheel', handler, {
+      passive: false,
+    });
 
     return () => {
       node.removeEventListener('wheel', handler);
     };
   }, [onWheel, ref]);
 
-  const flipY = (y) => 960 - y;
+  /*
+   * ------------------------------------------------------------
+   * Coordinate helpers
+   * ------------------------------------------------------------
+   */
 
-  const flippedSectors = sectors.map((sector) => ({
-    ...sector,
-    points: Array.isArray(sector.points)
-      ? sector.points.map(([x, y]) => [x, flipY(y)])
-      : undefined,
-    centerY:
-      sector.centerY != null
-        ? flipY(sector.centerY)
-        : sector.centerY,
-  }));
+  const flipY = (y) => SVG_SIZE - y;
 
-  const positionedPlanets = planets.filter(
-    (planet) =>
-      typeof planet.x === 'number' &&
-      Number.isFinite(planet.x) &&
-      typeof planet.y === 'number' &&
-      Number.isFinite(planet.y)
+  /*
+   * ------------------------------------------------------------
+   * Prepare sectors
+   *
+   * The source galaxy data uses a normal Cartesian-style Y
+   * coordinate while SVG renders Y downward.
+   * ------------------------------------------------------------
+   */
+
+  const flippedSectors = useMemo(
+    () =>
+      (Array.isArray(sectors) ? sectors : []).map((sector) => ({
+        ...sector,
+
+        points: Array.isArray(sector.points)
+          ? sector.points.map(([x, y]) => [
+              x,
+              flipY(y),
+            ])
+          : undefined,
+
+        centerY:
+          sector.centerY != null
+            ? flipY(sector.centerY)
+            : sector.centerY,
+      })),
+    [sectors],
   );
 
-  const flippedPlanets = positionedPlanets.map((planet) => ({
-    ...planet,
-    y: flipY(planet.y),
-  }));
+  /*
+   * ------------------------------------------------------------
+   * Only planets with valid map coordinates participate in
+   * graphical rendering and ship location resolution.
+   * ------------------------------------------------------------
+   */
 
-  const galaxyRadius =
-    flippedPlanets.length > 0
-      ? Math.min(
-          470,
-          Math.max(
-            ...flippedPlanets.map((planet) =>
-              Math.hypot(
-                planet.x - 480,
-                planet.y - 480
-              )
-            )
-          ) + 20
-        )
-      : 100;
+  const positionedPlanets = useMemo(
+    () =>
+      (Array.isArray(planets) ? planets : []).filter(
+        (planet) =>
+          typeof planet?.x === 'number' &&
+          Number.isFinite(planet.x) &&
+          typeof planet?.y === 'number' &&
+          Number.isFinite(planet.y),
+      ),
+    [planets],
+  );
 
-  const normalizeKey = (value) =>
-    String(value ?? '')
-      .toLowerCase()
-      .trim()
-      .replace(/[-_–—]+/g, ' ')
-      .replace(/\s+/g, ' ');
+  /*
+   * ------------------------------------------------------------
+   * SVG-facing planet coordinates
+   * ------------------------------------------------------------
+   */
 
-  const getFdpHealthClass = (fdp) => {
-    const value = Number(fdp);
+  const flippedPlanets = useMemo(
+    () =>
+      positionedPlanets.map((planet) => ({
+        ...planet,
+        y: flipY(planet.y),
+      })),
+    [positionedPlanets],
+  );
 
-    if (!Number.isFinite(value)) {
-      return 'health-unknown';
+  /*
+   * ------------------------------------------------------------
+   * Planet lookup
+   *
+   * IMPORTANT:
+   *
+   * Use the un-flipped planet coordinates here because
+   * shipTracking resolves API locations against the actual
+   * galaxy data.
+   * ------------------------------------------------------------
+   */
+
+  const planetLookup = useMemo(
+    () => buildPlanetLookup(positionedPlanets),
+    [positionedPlanets],
+  );
+
+  /*
+   * ------------------------------------------------------------
+   * Galaxy boundary
+   * ------------------------------------------------------------
+   */
+
+  const galaxyRadius = useMemo(() => {
+    if (flippedPlanets.length === 0) {
+      return 100;
     }
 
-    if (value < 200) {
-      return 'health-critical';
+    const maximumDistance = Math.max(
+      ...flippedPlanets.map((planet) =>
+        Math.hypot(
+          planet.x - SVG_CENTER,
+          planet.y - SVG_CENTER,
+        ),
+      ),
+    );
+
+    return Math.min(
+      470,
+      maximumDistance + 20,
+    );
+  }, [flippedPlanets]);
+
+  /*
+   * ------------------------------------------------------------
+   * Orbiting ships
+   *
+   * A ship in preparing_deploy is considered to be in transit
+   * and therefore is NOT rendered in an orbital ring.
+   *
+   * All other ships are resolved to their current planet.
+   * ------------------------------------------------------------
+   */
+
+  const orbitingShips = useMemo(() => {
+    if (!Array.isArray(ships)) {
+      return [];
     }
 
-    if (value <= 490) {
-      return 'health-warning';
+    return ships
+      .filter(
+        (ship) =>
+          ship?.condition?.key !== 'preparing_deploy',
+      )
+      .map((ship) => {
+        const planet = resolvePlanetLocation(
+          ship?.condition?.location,
+          planetLookup,
+        );
+
+        if (!planet) {
+          return null;
+        }
+
+        /*
+         * Do not mutate the API object.
+         * __planet exists only for map rendering.
+         */
+        return {
+          ...ship,
+          __planet: planet,
+        };
+      })
+      .filter(Boolean);
+  }, [ships, planetLookup]);
+
+  /*
+   * ------------------------------------------------------------
+   * Group orbiting ships by planet.
+   *
+   * This lets ShipMarker calculate separate orbital positions
+   * around each planet.
+   * ------------------------------------------------------------
+   */
+
+  const shipsByPlanet = useMemo(() => {
+    const groups = new Map();
+
+    for (const ship of orbitingShips) {
+      const planetId = String(ship.__planet.id);
+
+      if (!groups.has(planetId)) {
+        groups.set(planetId, []);
+      }
+
+      groups.get(planetId).push(ship);
     }
 
-    return 'health-good';
-  };
+    return groups;
+  }, [orbitingShips]);
+
+  /*
+   * ------------------------------------------------------------
+   * Transit routes
+   * ------------------------------------------------------------
+   */
+
+  const routes = Array.isArray(shipRoutes)
+    ? shipRoutes
+    : [];
+
+  /*
+   * ------------------------------------------------------------
+   * Render
+   * ------------------------------------------------------------
+   */
 
   return (
     <div
@@ -114,29 +275,46 @@ export default function Map({
     >
       <svg
         className="galaxy-svg"
-        viewBox="0 0 960 960"
+        viewBox={`0 0 ${SVG_SIZE} ${SVG_SIZE}`}
         preserveAspectRatio="xMidYMid meet"
         style={transformStyle}
       >
         <defs>
           <clipPath id="galaxy-mask">
             <circle
-              cx="480"
-              cy="480"
+              cx={SVG_CENTER}
+              cy={SVG_CENTER}
               r={galaxyRadius}
             />
           </clipPath>
+
+          <filter
+            id="ship-glow"
+            x="-100%"
+            y="-100%"
+            width="300%"
+            height="300%"
+          >
+            <feGaussianBlur
+              stdDeviation="1.5"
+              result="blur"
+            />
+
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
         </defs>
 
-        {/* =========================================================
+        {/* =====================================================
             MAP GEOMETRY
-            Sector boxes and connection lines stay inside the
-            circular galaxy boundary.
-        ========================================================== */}
+        ====================================================== */}
+
         <g clipPath="url(#galaxy-mask)">
           <circle
-            cx="480"
-            cy="480"
+            cx={SVG_CENTER}
+            cy={SVG_CENTER}
             r={galaxyRadius}
             fill="rgba(8, 12, 18, 0.95)"
           />
@@ -151,16 +329,23 @@ export default function Map({
             />
           ))}
 
-          {connections.map(([fromId, toId]) => {
+          {(Array.isArray(connections)
+            ? connections
+            : []
+          ).map(([fromId, toId]) => {
             const from = flippedPlanets.find(
-              (p) => p.id === fromId
+              (planet) =>
+                String(planet.id) === String(fromId),
             );
 
             const to = flippedPlanets.find(
-              (p) => p.id === toId
+              (planet) =>
+                String(planet.id) === String(toId),
             );
 
-            if (!from || !to) return null;
+            if (!from || !to) {
+              return null;
+            }
 
             return (
               <line
@@ -175,11 +360,10 @@ export default function Map({
           })}
         </g>
 
-        {/* =========================================================
+        {/* =====================================================
             SECTOR LABELS
-            These are not clipped. Sector.jsx keeps the label
-            inside the sector and inside the galaxy circle.
-        ========================================================== */}
+        ====================================================== */}
+
         <g>
           {flippedSectors.map((sector) => (
             <Sector
@@ -193,35 +377,84 @@ export default function Map({
           ))}
         </g>
 
-        {/* =========================================================
+        {/* =====================================================
+            TRANSIT SHIPS
+
+            Transit ships render above the connection lines but
+            below planets.
+
+            The route object supplies:
+              - origin
+              - destination
+              - start time
+              - duration
+              - shipId
+        ====================================================== */}
+
+        <g
+          className="ship-transit-layer"
+          filter="url(#ship-glow)"
+        >
+          {routes.map((route) => {
+            const ship = Array.isArray(ships)
+              ? ships.find(
+                  (candidate) =>
+                    String(candidate.id) ===
+                    String(route.shipId),
+                )
+              : null;
+
+            if (!ship) {
+              return null;
+            }
+
+            return (
+              <TransitShip
+                key={`transit-${ship.id}`}
+                route={route}
+                ship={ship}
+                onSelect={onSelectShip}
+              />
+            );
+          })}
+        </g>
+
+        {/* =====================================================
             PLANETS
-            Planets and their labels are outside the circular clip
-            so labels at the map edge are not cut off.
-        ========================================================== */}
+        ====================================================== */}
+
         <g>
           {flippedPlanets.map((planet) => {
             const planetNameKey = normalizeKey(
-              planet.name
+              planet.name,
             );
 
             const planetIdKey = normalizeKey(
-              planet.id
+              planet.id,
             );
 
             const associatedRegimentIcon =
-              associatedPlanetIcons?.[planetNameKey] ||
-              associatedPlanetIcons?.[planetIdKey];
+              associatedPlanetIcons?.[
+                planetNameKey
+              ] ||
+              associatedPlanetIcons?.[
+                planetIdKey
+              ];
 
             const hasSOS =
-              sosLocations?.has(planetNameKey) ||
-              sosLocations?.has(planetIdKey);
+              sosLocations?.has(
+                planetNameKey,
+              ) ||
+              sosLocations?.has(
+                planetIdKey,
+              );
 
             const hasAssociatedMatch =
-              associatedFobKeys.has(
-                planetNameKey
+              associatedFobKeys?.has(
+                planetNameKey,
               ) ||
-              associatedFobKeys.has(
-                planetIdKey
+              associatedFobKeys?.has(
+                planetIdKey,
               );
 
             return (
@@ -229,7 +462,8 @@ export default function Map({
                 key={planet.id}
                 planet={planet}
                 selected={
-                  selectedPlanet?.id === planet.id
+                  selectedPlanet?.id ===
+                  planet.id
                 }
                 hasAssociatedMatch={
                   hasAssociatedMatch
@@ -242,6 +476,43 @@ export default function Map({
               />
             );
           })}
+        </g>
+
+        {/* =====================================================
+            ORBITING SHIPS
+
+            Render AFTER planets so the ship markers are above
+            the planet and can receive pointer events.
+
+            Ships are grouped by their resolved planet.
+        ====================================================== */}
+
+        <g
+          className="ship-orbit-layer"
+          filter="url(#ship-glow)"
+        >
+          {Array.from(
+            shipsByPlanet.entries(),
+          ).flatMap(
+            ([planetShips]) =>
+              planetShips.map(
+                (ship, shipIndex) => (
+                  <ShipMarker
+                    key={`ship-${ship.id}`}
+                    ship={ship}
+                    shipIndex={shipIndex}
+                    shipCount={planetShips.length}
+                    selected={
+                      String(
+                        selectedShip?.id,
+                      ) ===
+                      String(ship.id)
+                    }
+                    onSelect={onSelectShip}
+                  />
+                ),
+              ),
+          )}
         </g>
       </svg>
     </div>

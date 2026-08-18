@@ -35,14 +35,19 @@ export default function ShipsPage() {
       setLoading(false);
     }
   }
-
   useEffect(() => {
-    loadData();
+    const timeoutId = setTimeout(() => {
+      loadData();
+    }, 0);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
   }, []);
 
   return (
     <div className="ships-page">
-      
+
 
       <header className="ships-header">
         <div className="ships-header-title">
@@ -133,11 +138,10 @@ export default function ShipsPage() {
                 {rows.map(
                   (row, rowIndex) => (
                     <div
-                      className={`ships-row ${
-                        rowIndex === 0
+                      className={`ships-row ${rowIndex === 0
                           ? "ships-row-header"
                           : ""
-                      }`}
+                        }`}
                       key={rowIndex}
                     >
                       {row.map(
