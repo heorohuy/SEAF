@@ -6,6 +6,7 @@ import {
   Map,
   Database,
   Shield,
+  Ship,
   BookOpen,
 } from "lucide-react";
 
