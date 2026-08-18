@@ -1,17 +1,6 @@
-import {
-  useRef,
-  useState,
-  useEffect,
-  useCallback,
-} from 'react';
-
-import {
-  Crosshair,
-  Shield,
-  Globe,
-  ZoomIn,
-  ZoomOut,
-} from 'lucide-react';
+import { useRef, useState, useEffect } from 'react';
+import { Crosshair, Shield, Globe, ZoomIn, ZoomOut } from 'lucide-react';
+import GalaxyMap from './components/Map';
 
 import Map from './components/Map';
 import NavigationMenu from './components/NavigationMenu';
@@ -1547,10 +1536,12 @@ useEffect(() => {
       <main className="galaxy">
         <div className="stars" />
 
-        <Map
-          containerRef={
-            mapContainerRef
-          }
+        {/* <div className="ad-strip">
+          <AdBanner />
+        </div> */}
+
+        <GalaxyMap
+          containerRef={mapContainerRef}
           planets={planets}
           connections={
             connections

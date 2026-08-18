@@ -16,6 +16,7 @@ import {
 const SVG_SIZE = 960;
 const SVG_CENTER = SVG_SIZE / 2;
 
+
 export default function GalaxyMap({
   containerRef,
   planets,
