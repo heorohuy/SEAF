@@ -557,5 +557,5 @@ export function clearStratagemCache() {
   /*
    * Descriptions are cached separately in memory.
    */
-  descriptionCache.clear();
+  descriptionCache.clear(); 
 }
