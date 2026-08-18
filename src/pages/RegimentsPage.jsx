@@ -8,10 +8,6 @@ import {
     Search,
     Database,
     RefreshCw,
-    ChevronDown,
-    ChevronUp,
-    Copy,
-    Check,
 } from "lucide-react";
 
 import NavigationMenu from "../components/NavigationMenu";
@@ -44,15 +40,6 @@ function formatValue(value) {
 
     return String(value);
 }
-
-
-function normalizeHeader(value) {
-    return String(value ?? "")
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, "_");
-}
-
 
 /*
  * Convert the "Deployed Regiments" sheet into objects.
@@ -357,11 +344,16 @@ export default function RegimentsPage() {
             }
         };
 
-
     useEffect(() => {
-        loadRegiments({
-            initial: true,
-        });
+        const timeoutId = setTimeout(() => {
+            loadRegiments({
+                initial: true,
+            });
+        }, 0);
+
+        return () => {
+            clearTimeout(timeoutId);
+        };
     }, []);
 
 

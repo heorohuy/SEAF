@@ -146,18 +146,11 @@ export default function PlanetsPage() {
   const [sector, setSector] = useState('ALL');
   const [faction, setFaction] = useState('ALL');
 
-  const loadPlanets = async ({
-    initial = false,
-  } = {}) => {
+  const loadPlanets = async () => {
+    setRefreshing(true);
+    setError(null);
+
     try {
-      if (initial) {
-        setLoading(true);
-      } else {
-        setRefreshing(true);
-      }
-
-      setError(null);
-
       const data = await fetchGalacticMap();
 
       setPlanets(
@@ -171,13 +164,49 @@ export default function PlanetsPage() {
         'Unable to retrieve planetary data.',
       );
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
   };
 
   useEffect(() => {
-    loadPlanets({ initial: true });
+    let cancelled = false;
+
+    const loadInitialPlanets = async () => {
+      try {
+        const data = await fetchGalacticMap();
+
+        if (cancelled) {
+          return;
+        }
+
+        setPlanets(
+          Array.isArray(data?.planets)
+            ? data.planets
+            : [],
+        );
+
+        setError(null);
+      } catch (err) {
+        if (cancelled) {
+          return;
+        }
+
+        setError(
+          err?.message ||
+          'Unable to retrieve planetary data.',
+        );
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadInitialPlanets();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const sectors = useMemo(() => {
@@ -266,7 +295,7 @@ export default function PlanetsPage() {
 
   return (
     <div className="planets-page">
-      
+
 
       <header className="planets-topbar">
         <div className="planets-logo">
@@ -493,10 +522,9 @@ export default function PlanetsPage() {
 
                         <td>
                           <span
-                            className={`planet-faction planet-faction--${
-                              planet.faction ||
+                            className={`planet-faction planet-faction--${planet.faction ||
                               'neutral'
-                            }`}
+                              }`}
                           >
                             {formatValue(
                               planet.faction,
