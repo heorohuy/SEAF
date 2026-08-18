@@ -45,7 +45,8 @@ export default async function handler(req, res) {
       });
     }
 
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailPattern =
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailPattern.test(email)) {
       return res.status(400).json({
@@ -53,11 +54,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // Access process through globalThis so this file remains compatible
-    // with an ESLint configuration that does not define Node globals.
-    const githubToken = globalThis.process?.env?.GITHUB_TOKEN;
-
-    if (!githubToken) {
+    if (!process.env.GITHUB_TOKEN) {
       console.error("GITHUB_TOKEN is not configured.");
 
       return res.status(500).json({
@@ -65,7 +62,8 @@ export default async function handler(req, res) {
       });
     }
 
-    const issueTitle = `[CONTACT] ${reason} — ${name}`;
+    const issueTitle =
+      `[CONTACT] ${reason} — ${name}`;
 
     const issueBody = [
       "## S.E.A.F. L.E.M.O.N. Contact Submission",
@@ -90,7 +88,7 @@ export default async function handler(req, res) {
 
         headers: {
           Accept: "application/vnd.github+json",
-          Authorization: `Bearer ${githubToken}`,
+          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
           "X-GitHub-Api-Version": "2022-11-28",
           "Content-Type": "application/json",
           "User-Agent": "SEAF-Lemon-Contact-Form",

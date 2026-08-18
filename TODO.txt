@@ -33,10 +33,3 @@ JJ:
 hamberger menu playes peekaboo
 
 api errors ltos and ltos
-
-add fleet to the map: https://hd2clans.com/hangar/about/api
-I want to implement the ship from the clan with id 1108, explicitly excluding super destroyers. I want the ships to appear on the planet they are orbiting. I want to be able to click on the ship and obtain their data. I want an animation for them in transit from their planet of origin to their destination planet.
-
-add priority target sheet to map
-
-add a dropdown box to flip the dimensions and only display the planets of the selected dimension
