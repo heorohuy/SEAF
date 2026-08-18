@@ -12,6 +12,7 @@ import {
 
 import NavigationMenu from "../components/NavigationMenu";
 import SiteFooter from "../components/SiteFooter";
+import SiteHeader from "../components/SiteHeader";
 
 import { getSheetData } from "../api/sicarisRegiments.js";
 
@@ -433,7 +434,7 @@ export default function RegimentsPage() {
             {/* HEADER                                                            */}
             {/* ----------------------------------------------------------------- */}
 
-            <header className="planets-topbar">
+            {/* <header className="planets-topbar">
                 <div className="planets-logo">
                     <Database size={23} />
 
@@ -463,7 +464,22 @@ export default function RegimentsPage() {
                 </div>
 
                 <NavigationMenu />
-            </header>
+            </header> */}
+
+            <SiteHeader
+                    databaseStatus={{
+                      state: loading
+                        ? 'loading'
+                        : error
+                          ? 'error'
+                          : 'online',
+                      label: loading
+                        ? 'SYNCING'
+                        : error
+                          ? 'OFFLINE'
+                          : 'ONLINE',
+                    }}
+                  />
 
 
             <main className="planets-content">
