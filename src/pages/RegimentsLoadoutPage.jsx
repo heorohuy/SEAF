@@ -608,6 +608,11 @@ function StratagemIcon({
     setFailed,
   ] = useState(false);
 
+  useEffect(() => {
+    setCandidateIndex(0);
+    setFailed(false);
+  }, [name]);
+
   if (
     failed ||
     candidates.length === 0
@@ -740,26 +745,39 @@ function StratagemButton({
     setDescription,
   ] = useState(null);
 
+  const [
+    descriptionLoading,
+    setDescriptionLoading,
+  ] = useState(false);
+
   useEffect(() => {
     if (
       !expanded ||
-      description !== null
+      description
     ) {
       return;
     }
 
     let cancelled = false;
 
-    getStratagemDescription(name)
+    setDescriptionLoading(
+      true
+    );
+
+    getStratagemDescription(
+      name
+    )
       .then((value) => {
         if (!cancelled) {
-          setDescription(value);
+          setDescription(
+            value
+          );
         }
       })
-      .catch(() => {
+      .finally(() => {
         if (!cancelled) {
-          setDescription(
-            "No tactical description is currently available for this stratagem.",
+          setDescriptionLoading(
+            false
           );
         }
       });
@@ -798,7 +816,6 @@ function StratagemButton({
       >
         <span className="regiment-stratagem-icon-wrap">
           <StratagemIcon
-            key={name}
             name={name}
           />
         </span>
@@ -965,7 +982,7 @@ function StratagemButton({
 
 
           <div className="regiment-stratagem-description">
-            {expanded && description === null ? (
+            {descriptionLoading ? (
               <span className="regiment-stratagem-description-loading">
                 RETRIEVING STRATAGEM RECORD...
               </span>
@@ -1228,14 +1245,9 @@ export default function RegimentsLoadoutPage() {
     }
   }
 
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      loadData();
-    }, 0);
 
-    return () => {
-      clearTimeout(timeoutId);
-    };
+  useEffect(() => {
+    loadData();
   }, []);
 
   /*
