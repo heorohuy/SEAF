@@ -974,7 +974,7 @@ button {
 }
 
 .ship-image {
-  pointer-events: none;
+  pointer-events: all;
   overflow: visible;
   image-rendering: auto;
 }
@@ -990,7 +990,7 @@ button {
 .ship-core {
   fill: #fff4c2;
   opacity: 0.9;
-  pointer-events: none;
+  pointer-events: all;
 }
 
 

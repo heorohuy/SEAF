@@ -33,3 +33,9 @@ JJ:
 hamberger menu playes peekaboo
 
 api errors ltos and ltos
+
+fleet ships circle is too big
+
+basic equipment for seaf isnt in loadouts
+
+ship transit dosnt do anything

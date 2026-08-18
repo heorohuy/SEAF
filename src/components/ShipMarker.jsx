@@ -64,12 +64,12 @@ export default function ShipMarker({
       aria-label={`Select ${label}`}
     >
       {/* Large invisible hit target. */}
-      <circle
+      {/* <circle
         className="ship-hit-area"
         cx="0"
         cy="0"
-        r="5"
-      />
+        r="0.5"
+      /> */}
 
       <circle
         className="ship-orbit-pulse"
