@@ -1,0 +1,248 @@
+.app-header {
+  position: relative;
+  z-index: 1000;
+
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+
+  min-height: 72px;
+  width: 100%;
+
+  padding: 10px 18px;
+
+  box-sizing: border-box;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(9, 12, 15, 0.98),
+      rgba(13, 17, 20, 0.96)
+    );
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+
+  color: #f3f5f6;
+
+  font-family: 'Fragile Bombers', Inter, Arial, Helvetica, sans-serif;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Branding                                                                   */
+/* -------------------------------------------------------------------------- */
+
+.app-header-brand {
+  min-width: 0;
+}
+
+.app-header-brand-main {
+  color: #d9dde0;
+
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  line-height: 1.2;
+
+  white-space: nowrap;
+}
+
+.app-header-page-title {
+  margin-top: 3px;
+
+  color: #ffffff;
+
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.1;
+
+  white-space: nowrap;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Status                                                                     */
+/* -------------------------------------------------------------------------- */
+
+.app-header-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+}
+
+.app-header-status-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+
+  white-space: nowrap;
+}
+
+.app-header-status-label {
+  color: rgba(255, 255, 255, 0.48);
+
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+.app-header-status-value {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.app-header-status-dot {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background: currentColor;
+  box-shadow: 0 0 7px currentColor;
+}
+
+.app-header-status-online {
+  color: #7dff8a;
+}
+
+.app-header-status-warning {
+  color: #ffd34d;
+}
+
+.app-header-status-error {
+  color: #ff6464;
+}
+
+.app-header-status-offline {
+  color: #92999e;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Actions                                                                    */
+/* -------------------------------------------------------------------------- */
+
+.app-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.app-header-menu-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  min-height: 38px;
+
+  padding: 0 13px;
+
+  border: 1px solid rgba(255, 255, 255, 0.2);
+
+  background: rgba(255, 255, 255, 0.04);
+
+  color: #ffffff;
+
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+
+  cursor: pointer;
+
+  transition:
+    background 120ms ease,
+    border-color 120ms ease;
+}
+
+.app-header-menu-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.app-header-menu-button:focus-visible {
+  outline: 2px solid #f5d547;
+  outline-offset: 2px;
+}
+
+.app-header-menu-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.app-header-menu-label {
+  line-height: 1;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Mobile                                                                     */
+/* -------------------------------------------------------------------------- */
+
+@media (max-width: 800px) {
+  .app-header {
+    grid-template-columns: 1fr auto;
+
+    min-height: 64px;
+  }
+
+  .app-header-status {
+    display: none;
+  }
+
+  .app-header-page-title {
+    font-size: 17px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-header {
+    padding: 9px 12px;
+  }
+
+  .app-header-brand-main {
+    font-size: 8px;
+  }
+
+  .app-header-page-title {
+    font-size: 15px;
+  }
+
+  .app-header-menu-label {
+    display: none;
+  }
+
+  .app-header-menu-button {
+    width: 40px;
+    padding: 0;
+  }
+}
+
+.logo-expanded {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  padding: 10px 14px;
+
+  background: rgba(8, 12, 18, 0.98);
+  border: 1px solid rgba(244, 197, 66, 0.35);
+  color: #c8d0d8;
+
+  font-size: calc(11px * var(--ui-scale));
+  line-height: 1.5;
+  letter-spacing: 1px;
+  white-space: nowrap;
+
+  z-index: 20;
+}

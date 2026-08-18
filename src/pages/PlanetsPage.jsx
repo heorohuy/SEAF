@@ -16,6 +16,8 @@ import '../AppNavigation.css';
 import './PlanetsPage.css';
 
 import SiteFooter from "../components/SiteFooter";
+import SiteHeader from '../components/SiteHeader';
+
 
 
 function formatValue(value) {
@@ -296,8 +298,9 @@ export default function PlanetsPage() {
   return (
     <div className="planets-page">
 
+      <SiteHeader />
 
-      <header className="planets-topbar">
+      {/* <header className="planets-topbar">
         <div className="planets-logo">
           <Database size={23} />
 
@@ -322,15 +325,22 @@ export default function PlanetsPage() {
           </strong>
         </div>
         <NavigationMenu />
-      </header>
+      </header> */}
 
       <main className="planets-content">
         <section className="planets-heading">
           <div>
-            <div className="planets-kicker">
-              <Database size={14} />
-              GALACTIC ARCHIVE // LIVE DATA
-            </div>
+            <div className="planets-status">
+          <span>DATABASE STATUS</span>
+
+          <strong>
+            {loading
+              ? 'SYNCING'
+              : error
+                ? 'OFFLINE'
+                : 'ONLINE'}
+          </strong>
+        </div>
 
             <h1>PLANET DATABASE</h1>
 
