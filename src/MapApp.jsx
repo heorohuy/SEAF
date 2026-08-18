@@ -27,6 +27,7 @@ import cavalryIcon from './assets/1986-JJ-SEAFICONS-MECHANIZED.png';
 import sapperIcon from './assets/1986-JJ-SEAFICONS-SAPPER.png';
 
 import SiteFooter from './components/SiteFooter';
+import SiteHeader from './components/SiteHeader';
 
 // HD2Clans
 import {
@@ -1481,7 +1482,7 @@ useEffect(() => {
 
   return (
     <div className="app">
-      <header className="top-bar">
+      {/* <header className="top-bar">
         <div
           className={`logo ${logoExpanded
               ? 'expanded'
@@ -1530,7 +1531,22 @@ useEffect(() => {
         </div>
 
         <NavigationMenu />
-      </header>
+      </header> */}
+
+      <SiteHeader
+              databaseStatus={{
+                state: loading
+                  ? 'loading'
+                  : error
+                    ? 'error'
+                    : 'online',
+                label: loading
+                  ? 'SYNCING'
+                  : error
+                    ? 'OFFLINE'
+                    : 'ONLINE',
+              }}
+            />
 
       <main className="galaxy">
         <div className="stars" />

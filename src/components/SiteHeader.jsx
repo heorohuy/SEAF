@@ -5,7 +5,6 @@ import { Shield } from 'lucide-react';
 
 export default function SiteHeader({
   databaseStatus,
-  warStatus,
   children,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -55,32 +54,18 @@ export default function SiteHeader({
           {databaseStatus && (
             <div className="app-header-status-item">
               <span className="app-header-status-label">
-                DATABASE
+                DATABASE STATUS
               </span>
 
               <span
                 className={`app-header-status-value app-header-status-${databaseStatus.state}`}
               >
-                <span className="app-header-status-dot" />
+                
                 {databaseStatus.label}
               </span>
             </div>
           )}
 
-          {warStatus && (
-            <div className="app-header-status-item">
-              <span className="app-header-status-label">
-                WAR STATUS
-              </span>
-
-              <span
-                className={`app-header-status-value app-header-status-${warStatus.state}`}
-              >
-                <span className="app-header-status-dot" />
-                {warStatus.label}
-              </span>
-            </div>
-          )}
         </div>
 
         <div className="app-header-actions">

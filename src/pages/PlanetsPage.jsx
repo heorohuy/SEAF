@@ -298,49 +298,28 @@ export default function PlanetsPage() {
   return (
     <div className="planets-page">
 
-      <SiteHeader />
-
-      {/* <header className="planets-topbar">
-        <div className="planets-logo">
-          <Database size={23} />
-
-          <div>
-            <span>S.E.A.F. - L.E.M.O.N</span>
-
-            <small>
-              PLANETARY DATABASE
-            </small>
-          </div>
-        </div>
-
-        <div className="planets-status">
-          <span>DATABASE STATUS</span>
-
-          <strong>
-            {loading
-              ? 'SYNCING'
-              : error
-                ? 'OFFLINE'
-                : 'ONLINE'}
-          </strong>
-        </div>
-        <NavigationMenu />
-      </header> */}
+      <SiteHeader
+        databaseStatus={{
+          state: loading
+            ? 'loading'
+            : error
+              ? 'error'
+              : 'online',
+          label: loading
+            ? 'SYNCING'
+            : error
+              ? 'OFFLINE'
+              : 'ONLINE',
+        }}
+      />
 
       <main className="planets-content">
         <section className="planets-heading">
           <div>
-            <div className="planets-status">
-          <span>DATABASE STATUS</span>
-
-          <strong>
-            {loading
-              ? 'SYNCING'
-              : error
-                ? 'OFFLINE'
-                : 'ONLINE'}
-          </strong>
-        </div>
+            <div className="planets-kicker">
+              <Database size={14} />
+              GALACTIC ARCHIVE // LIVE DATA
+            </div>
 
             <h1>PLANET DATABASE</h1>
 

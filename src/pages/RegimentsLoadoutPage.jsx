@@ -25,6 +25,7 @@ import {
 
 import "./RegimentsLoadoutPage.css";
 import SiteFooter from "../components/SiteFooter.jsx";
+import SiteHeader from "../components/SiteHeader.jsx";
 
 
 /*
@@ -1343,7 +1344,7 @@ export default function RegimentsLoadoutPage() {
 
   return (
     <div className="regiments-page">
-      <header className="regiments-header">
+      {/* <header className="regiments-header">
         <div className="regiments-header-title">
           <Shield size={22} />
 
@@ -1374,7 +1375,28 @@ export default function RegimentsLoadoutPage() {
         </div>
 
         <NavigationMenu />
-      </header>
+      </header> */}
+
+      <SiteHeader
+        databaseStatus={{
+          state: loading
+            ? 'loading'
+            : error
+              ? 'error'
+              : stratagemCatalog.length > 0
+                ? 'online'
+                : 'warning',
+
+          label: loading
+            ? 'SYNCING'
+            : error
+              ? 'OFFLINE'
+              : stratagemCatalog.length > 0
+                ? 'ONLINE'
+                : 'PARTIAL',
+        }}
+      />
+
 
       <main className="regiments-content">
         <section className="regiments-title">
