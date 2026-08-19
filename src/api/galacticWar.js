@@ -496,4 +496,35 @@ function buildSectors(planets) {
   });
 }
 
+export async function fetchGalacticMap() {
+  const response = await fetch(
+    '/api/galactic-map',
+    {
+      method: 'GET',
+      credentials: 'same-origin',
+      cache: 'no-store',
+    },
+  );
+
+  if (!response.ok) {
+    let message;
+
+    try {
+      const body = await response.json();
+
+      message =
+        body?.error ||
+        `Galactic map API error ${response.status}`;
+    } catch {
+      message =
+        `Galactic map API error ${response.status}`;
+    }
+
+    throw new Error(message);
+  }
+
+  return response.json();
+}
+
+
 export default fetchGalacticMap;
