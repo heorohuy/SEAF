@@ -153,14 +153,28 @@ export default function PlanetsPage() {
     setError(null);
 
     try {
-      const data = await fetchGalacticMap();
+      const data = await fetchGalacticMap({
+        forceRefresh: true,
+      });
 
       setPlanets(
         Array.isArray(data?.planets)
           ? data.planets
           : [],
       );
+
+      setDatabaseStatus(
+        data.databaseStatus ?? {
+          state: 'online',
+          label: 'ONLINE',
+        },
+      );
     } catch (err) {
+      setDatabaseStatus({
+        state: 'error',
+        label: 'OFFLINE',
+      });
+
       setError(
         err?.message ||
         'Unable to retrieve planetary data.',
@@ -169,6 +183,7 @@ export default function PlanetsPage() {
       setRefreshing(false);
     }
   };
+
 
   useEffect(() => {
     let cancelled = false;
@@ -187,11 +202,23 @@ export default function PlanetsPage() {
             : [],
         );
 
+        setDatabaseStatus(
+          data.databaseStatus ?? {
+            state: 'online',
+            label: 'ONLINE',
+          },
+        );
+
         setError(null);
       } catch (err) {
         if (cancelled) {
           return;
         }
+
+        setDatabaseStatus({
+          state: 'error',
+          label: 'OFFLINE',
+        });
 
         setError(
           err?.message ||
@@ -203,6 +230,7 @@ export default function PlanetsPage() {
         }
       }
     };
+
 
     void loadInitialPlanets();
 

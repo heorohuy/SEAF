@@ -1,4 +1,10 @@
-const DEFAULT_API_BASE = import.meta.env.VITE_HELDIVERS_API || (import.meta.env.DEV ? '/helldivers-api' : 'https://api.helldivers2.dev');
+// const DEFAULT_API_BASE = import.meta.env.VITE_HELDIVERS_API || (import.meta.env.DEV ? '/helldivers-api' : 'https://api.helldivers2.dev');
+
+const DEFAULT_API_BASE =
+  import.meta.env.DEV
+    ? '/helldivers-api'
+    : '/api';
+
 const HEADER_CLIENT = import.meta.env.VITE_HELDIVERS_CLIENT || 'helldivers2-seaf-map';
 const HEADER_CONTACT = import.meta.env.VITE_HELDIVERS_CONTACT || 'admin@helldivers2.dev';
 
@@ -211,7 +217,7 @@ async function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function fetchJson(endpoint, retries = 3, backoff = 500) {
+async function fetchJson(endpoint, retries = 2) {
   const url = `${DEFAULT_API_BASE.replace(/\/$/, '')}${endpoint}`;
 
   for (let attempt = 0; attempt < retries; attempt += 1) {
@@ -225,19 +231,35 @@ async function fetchJson(endpoint, retries = 3, backoff = 500) {
       return response.json();
     }
 
-    if (response.status === 429 && attempt < retries - 1) {
-      const retryAfter = parseInt(response.headers.get('Retry-After') || '', 10);
-      const delay = Number.isFinite(retryAfter) ? retryAfter * 1000 : backoff * (attempt + 1);
-      await wait(delay);
+    if (response.status === 429) {
+      const retryAfter =
+        Number(response.headers.get('Retry-After'));
+
+      const delay = Number.isFinite(retryAfter)
+        ? retryAfter * 1000
+        : 10_000;
+
+      if (attempt < retries - 1) {
+        await wait(delay);
+        continue;
+      }
+    }
+
+    if (response.status >= 500 && attempt < retries - 1) {
+      await wait(3000 * (attempt + 1));
       continue;
     }
 
     const body = await response.text();
-    throw new Error(`Helldivers API error ${response.status}: ${body}`);
+
+    throw new Error(
+      `Helldivers API error ${response.status}: ${body}`,
+    );
   }
 
-  throw new Error('Helldivers API rate limited after retry attempts');
+  throw new Error('Helldivers API request failed');
 }
+
 
 function buildConnections(planetsByIndex, infos) {
   const edges = new Set();
@@ -474,99 +496,116 @@ function buildSectors(planets) {
   });
 }
 
-let galacticMapRequest = null;
-
 export async function fetchGalacticMap() {
-  if (galacticMapRequest) {
-    return galacticMapRequest;
+  const response = await fetch(
+    '/api/galactic-map',
+    {
+      method: 'GET',
+      credentials: 'same-origin',
+      cache: 'no-store',
+    },
+  );
+
+  if (!response.ok) {
+    let message;
+
+    try {
+      const body = await response.json();
+
+      message =
+        body?.error ||
+        `Galactic map API error ${response.status}`;
+    } catch {
+      message =
+        `Galactic map API error ${response.status}`;
+    }
+
+    throw new Error(message);
   }
 
-  galacticMapRequest = (async () => {
-    const [
-      rawPlanets,
-      warIdResponse,
-    ] = await Promise.all([
-      fetchJson('/api/v1/planets'),
-      fetchJson('/raw/api/WarSeason/current/WarID'),
-    ]);
+  const data = await response.json();
 
-    const warId = warIdResponse?.id;
+  /*
+   * --------------------------------------------------------------------------
+   * Convert the cached raw API response into the format expected by the map.
+   * --------------------------------------------------------------------------
+   */
 
-    const warInfo = warId
-      ? await fetchJson(
-        `/raw/api/WarSeason/${warId}/WarInfo`,
-      )
-      : null;
-
-    const planetInfos =
-      Array.isArray(warInfo?.planetInfos)
-        ? warInfo.planetInfos
-        : [];
-
-    const planetInfoByIndex =
-      new Map(
-        planetInfos.map(
-          (info) => [
-            String(info.index),
-            info,
-          ],
-        ),
-      );
-
-    const planets = Array.isArray(rawPlanets)
-      ? Array.from(
-        new Map(
-          rawPlanets.map((raw) => {
-            const planet = normalizePlanet(
-              raw,
-              planetInfoByIndex.get(String(raw.index)),
-            );
-
-            return [planet.name, planet];
-          }),
-        ).values(),
-      )
+  const rawPlanets =
+    Array.isArray(data?.planets)
+      ? data.planets
       : [];
 
-    const planetsByIndex =
+  const warInfo =
+    data?.warInfo ?? null;
+
+  const planetInfos =
+    Array.isArray(warInfo?.planetInfos)
+      ? warInfo.planetInfos
+      : [];
+
+  const planetInfoByIndex =
+    new Map(
+      planetInfos.map((info) => [
+        String(info.index),
+        info,
+      ]),
+    );
+
+  const planets =
+    Array.from(
       new Map(
-        planets.map((planet) => [
-          String(planet.index),
-          planet,
-        ]),
-      );
+        rawPlanets.map((raw) => {
+          const planet =
+            normalizePlanet(
+              raw,
+              planetInfoByIndex.get(
+                String(raw.index),
+              ),
+            );
 
-    const connections =
-      buildConnections(
-        planetsByIndex,
-        planetInfos,
-      );
+          return [
+            planet.name,
+            planet,
+          ];
+        }),
+      ).values(),
+    );
 
-    const sectors =
-      buildSectors(planets);
+  const planetsByIndex =
+    new Map(
+      planets.map((planet) => [
+        String(planet.index),
+        planet,
+      ]),
+    );
 
-    const warInfoPayload = warInfo
-      ? {
-        warId: warInfo.warId,
-        startDate: warInfo.startDate,
-        endDate: warInfo.endDate,
-        layoutVersion: warInfo.layoutVersion,
-      }
-      : null;
+  const connections =
+    buildConnections(
+      planetsByIndex,
+      planetInfos,
+    );
 
-    return {
-      planets,
-      connections,
-      sectors,
-      warInfo: warInfoPayload,
-    };
-  })();
+  const sectors =
+    buildSectors(planets);
 
-  try {
-    return await galacticMapRequest;
-  } finally {
-    galacticMapRequest = null;
-  }
+  return {
+    ...data,
+
+    planets,
+    connections,
+    sectors,
+
+    /*
+     * Preserve the server/database status.
+     */
+    databaseStatus:
+      data?.databaseStatus ?? {
+        state: 'online',
+        label: 'ONLINE',
+        cached: false,
+      },
+  };
 }
 
 export default fetchGalacticMap;
