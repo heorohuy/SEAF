@@ -523,8 +523,89 @@ export async function fetchGalacticMap() {
     throw new Error(message);
   }
 
-  return response.json();
-}
+  const data = await response.json();
 
+  /*
+   * --------------------------------------------------------------------------
+   * Convert the cached raw API response into the format expected by the map.
+   * --------------------------------------------------------------------------
+   */
+
+  const rawPlanets =
+    Array.isArray(data?.planets)
+      ? data.planets
+      : [];
+
+  const warInfo =
+    data?.warInfo ?? null;
+
+  const planetInfos =
+    Array.isArray(warInfo?.planetInfos)
+      ? warInfo.planetInfos
+      : [];
+
+  const planetInfoByIndex =
+    new Map(
+      planetInfos.map((info) => [
+        String(info.index),
+        info,
+      ]),
+    );
+
+  const planets =
+    Array.from(
+      new Map(
+        rawPlanets.map((raw) => {
+          const planet =
+            normalizePlanet(
+              raw,
+              planetInfoByIndex.get(
+                String(raw.index),
+              ),
+            );
+
+          return [
+            planet.name,
+            planet,
+          ];
+        }),
+      ).values(),
+    );
+
+  const planetsByIndex =
+    new Map(
+      planets.map((planet) => [
+        String(planet.index),
+        planet,
+      ]),
+    );
+
+  const connections =
+    buildConnections(
+      planetsByIndex,
+      planetInfos,
+    );
+
+  const sectors =
+    buildSectors(planets);
+
+  return {
+    ...data,
+
+    planets,
+    connections,
+    sectors,
+
+    /*
+     * Preserve the server/database status.
+     */
+    databaseStatus:
+      data?.databaseStatus ?? {
+        state: 'online',
+        label: 'ONLINE',
+        cached: false,
+      },
+  };
+}
 
 export default fetchGalacticMap;

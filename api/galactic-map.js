@@ -1,8 +1,8 @@
 import { Redis } from '@upstash/redis';
 
 const redis = new Redis({
-  url: process.env.KV_REST_API_URL,
-  token: process.env.KV_REST_API_TOKEN,
+    url: process.env.KV_REST_API_URL,
+    token: process.env.KV_REST_API_TOKEN,
 });
 
 
@@ -41,9 +41,9 @@ const WAR_INFO_TTL = 600;
  *
  * These should be LONGER than the normal TTL.
  */
-const PLANETS_STALE_TTL = 300;   // 5 minutes
-const WAR_ID_STALE_TTL = 3600;   // 1 hour
-const WAR_INFO_STALE_TTL = 3600; // 1 hour
+const PLANETS_STALE_TTL = 60*60*6;   // 6 hours
+const WAR_ID_STALE_TTL = 60*60*60;   // 60 hour
+const WAR_INFO_STALE_TTL = 60*60*60; // 60 hour
 
 /*
  * Redis lock lifetime.
@@ -141,26 +141,11 @@ async function fetchHelldivers(endpoint) {
                 response.status,
             )
         ) {
-            if (serverRetries >= 2) {
-                throw new Error(
-                    `Helldivers API unavailable (${response.status}).`,
-                );
-            }
-
-            const delay =
-                2000 * (2 ** serverRetries);
-
-            serverRetries += 1;
-
-            console.warn(
-                `[SEAF] Helldivers API returned ${response.status}. ` +
-                `Retrying in ${delay / 1000}s.`,
+            throw new Error(
+                `Helldivers API unavailable (${response.status}).`,
             );
-
-            await sleep(delay);
-
-            continue;
         }
+
 
         /* ---------------------------------------------------------------------- */
         /* Other errors                                                           */
@@ -332,7 +317,7 @@ async function getPlanets() {
     await setCache(
         PLANETS_KEY,
         data,
-        PLANETS_TTL,
+        PLANETS_STALE_TTL,
     );
 
 
@@ -399,7 +384,7 @@ async function getWarId() {
     await setCache(
         WAR_ID_KEY,
         data,
-        WAR_ID_TTL,
+        WAR_ID_STALE_TTL,
     );
 
 
@@ -444,7 +429,7 @@ async function getWarInfo(warId) {
     await setCache(
         key,
         data,
-        WAR_INFO_TTL,
+        WAR_INFO_STALE_TTL,
     );
 
 
