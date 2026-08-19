@@ -52,9 +52,9 @@ const LOCK_TTL = 15;
 /* -------------------------------------------------------------------------- */
 
 function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
+    return new Promise((resolve) => {
+        setTimeout(resolve, ms);
+    });
 }
 
 
@@ -63,111 +63,111 @@ function sleep(ms) {
 /* -------------------------------------------------------------------------- */
 
 async function fetchHelldivers(endpoint) {
-  const url = `${API_BASE}${endpoint}`;
+    const url = `${API_BASE}${endpoint}`;
 
-  let rateLimitRetries = 0;
-  let serverRetries = 0;
+    let rateLimitRetries = 0;
+    let serverRetries = 0;
 
-  while (true) {
-    const response = await fetch(url, {
-      method: 'GET',
+    while (true) {
+        const response = await fetch(url, {
+            method: 'GET',
 
-      headers: {
-        'X-Super-Client': 'SEAF',
-        'X-Super-Contact':
-          'https://github.com/heorohuy/SEAF',
-      },
+            headers: {
+                'X-Super-Client': 'SEAF',
+                'X-Super-Contact':
+                    'https://github.com/heorohuy/SEAF',
+            },
 
-      cache: 'no-store',
-    });
+            cache: 'no-store',
+        });
 
-    if (response.ok) {
-      return response.json();
-    }
+        if (response.ok) {
+            return response.json();
+        }
 
-    /* ---------------------------------------------------------------------- */
-    /* 429 Rate Limited                                                       */
-    /* ---------------------------------------------------------------------- */
+        /* ---------------------------------------------------------------------- */
+        /* 429 Rate Limited                                                       */
+        /* ---------------------------------------------------------------------- */
 
-    if (response.status === 429) {
-      if (rateLimitRetries >= 2) {
-        throw new Error(
-          'Helldivers API rate limit exceeded.',
-        );
-      }
+        if (response.status === 429) {
+            if (rateLimitRetries >= 2) {
+                throw new Error(
+                    'Helldivers API rate limit exceeded.',
+                );
+            }
 
-      rateLimitRetries += 1;
+            rateLimitRetries += 1;
 
-      const retryAfterHeader =
-        response.headers.get('Retry-After');
+            const retryAfterHeader =
+                response.headers.get('Retry-After');
 
-      const retryAfter =
-        Number(retryAfterHeader);
+            const retryAfter =
+                Number(retryAfterHeader);
 
-      /*
-       * If the API tells us how long to wait,
-       * respect it.
-       *
-       * Otherwise use our own backoff.
-       */
-      const delay =
-        Number.isFinite(retryAfter)
-          ? Math.min(
-              retryAfter * 1000,
-              30_000,
+            /*
+             * If the API tells us how long to wait,
+             * respect it.
+             *
+             * Otherwise use our own backoff.
+             */
+            const delay =
+                Number.isFinite(retryAfter)
+                    ? Math.min(
+                        retryAfter * 1000,
+                        30_000,
+                    )
+                    : 10_000 * rateLimitRetries;
+
+            console.warn(
+                `[SEAF] Helldivers API returned 429. ` +
+                `Waiting ${Math.round(delay / 1000)}s.`,
+            );
+
+            await sleep(delay);
+
+            continue;
+        }
+
+        /* ---------------------------------------------------------------------- */
+        /* Temporary 5xx errors                                                   */
+        /* ---------------------------------------------------------------------- */
+
+        if (
+            [500, 502, 503, 504].includes(
+                response.status,
             )
-          : 10_000 * rateLimitRetries;
+        ) {
+            if (serverRetries >= 2) {
+                throw new Error(
+                    `Helldivers API unavailable (${response.status}).`,
+                );
+            }
 
-      console.warn(
-        `[SEAF] Helldivers API returned 429. ` +
-        `Waiting ${Math.round(delay / 1000)}s.`,
-      );
+            const delay =
+                2000 * (2 ** serverRetries);
 
-      await sleep(delay);
+            serverRetries += 1;
 
-      continue;
-    }
+            console.warn(
+                `[SEAF] Helldivers API returned ${response.status}. ` +
+                `Retrying in ${delay / 1000}s.`,
+            );
 
-    /* ---------------------------------------------------------------------- */
-    /* Temporary 5xx errors                                                   */
-    /* ---------------------------------------------------------------------- */
+            await sleep(delay);
 
-    if (
-      [500, 502, 503, 504].includes(
-        response.status,
-      )
-    ) {
-      if (serverRetries >= 2) {
+            continue;
+        }
+
+        /* ---------------------------------------------------------------------- */
+        /* Other errors                                                           */
+        /* ---------------------------------------------------------------------- */
+
+        const body = await response.text();
+
         throw new Error(
-          `Helldivers API unavailable (${response.status}).`,
+            `Helldivers API error ${response.status}: ${body}`,
         );
-      }
-
-      const delay =
-        2000 * (2 ** serverRetries);
-
-      serverRetries += 1;
-
-      console.warn(
-        `[SEAF] Helldivers API returned ${response.status}. ` +
-        `Retrying in ${delay / 1000}s.`,
-      );
-
-      await sleep(delay);
-
-      continue;
     }
-
-    /* ---------------------------------------------------------------------- */
-    /* Other errors                                                           */
-    /* ---------------------------------------------------------------------- */
-
-    const body = await response.text();
-
-    throw new Error(
-      `Helldivers API error ${response.status}: ${body}`,
-    );
-  }
 }
 
 
@@ -176,43 +176,43 @@ async function fetchHelldivers(endpoint) {
 /* -------------------------------------------------------------------------- */
 
 async function getCache(key) {
-  try {
-    const entry = await redis.get(key);
+    try {
+        const entry = await redis.get(key);
 
-    if (!entry) {
-      return null;
+        if (!entry) {
+            return null;
+        }
+
+        return entry;
+    } catch (error) {
+        console.error(
+            `[SEAF] Redis GET failed for ${key}:`,
+            error,
+        );
+
+        /*
+         * Redis failure should not be confused with a cache miss.
+         */
+        throw error;
     }
-
-    return entry;
-  } catch (error) {
-    console.error(
-      `[SEAF] Redis GET failed for ${key}:`,
-      error,
-    );
-
-    /*
-     * Redis failure should not be confused with a cache miss.
-     */
-    throw error;
-  }
 }
 
 
 async function setCache(
-  key,
-  data,
-  ttl,
-) {
-  await redis.set(
     key,
-    {
-      data,
-      cachedAt: Date.now(),
-    },
-    {
-      ex: ttl,
-    },
-  );
+    data,
+    ttl,
+) {
+    await redis.set(
+        key,
+        {
+            data,
+            cachedAt: Date.now(),
+        },
+        {
+            ex: ttl,
+        },
+    );
 }
 
 
@@ -221,39 +221,39 @@ async function setCache(
 /* -------------------------------------------------------------------------- */
 
 async function acquireLock(key) {
-  const lockValue =
-    `${Date.now()}-${Math.random()}`;
+    const lockValue =
+        `${Date.now()}-${Math.random()}`;
 
-  const acquired =
-    await redis.set(
-      key,
-      lockValue,
-      {
-        nx: true,
-        ex: LOCK_TTL,
-      },
-    );
+    const acquired =
+        await redis.set(
+            key,
+            lockValue,
+            {
+                nx: true,
+                ex: LOCK_TTL,
+            },
+        );
 
-  return acquired === 'OK';
+    return acquired === 'OK';
 }
 
 
 async function waitForCache(
-  key,
-  attempts = 5,
+    key,
+    attempts = 5,
 ) {
-  for (let i = 0; i < attempts; i += 1) {
-    await sleep(500);
+    for (let i = 0; i < attempts; i += 1) {
+        await sleep(500);
 
-    const cached =
-      await getCache(key);
+        const cached =
+            await getCache(key);
 
-    if (cached) {
-      return cached;
+        if (cached) {
+            return cached;
+        }
     }
-  }
 
-  return null;
+    return null;
 }
 
 
@@ -262,80 +262,81 @@ async function waitForCache(
 /* -------------------------------------------------------------------------- */
 
 async function getPlanets() {
-  const cached =
-    await getCache(PLANETS_KEY);
+    const cached =
+        await getCache(PLANETS_KEY);
 
-  if (cached) {
-    return {
-      data: cached.data,
-      cached: true,
-      cachedAt: cached.cachedAt,
-    };
-  }
-
-  /*
-   * Nobody has the cache.
-   *
-   * Try to become the process that refreshes it.
-   */
-  const acquired =
-    await acquireLock(
-      PLANETS_LOCK_KEY,
-    );
-
-  if (!acquired) {
-    /*
-     * Another Vercel function is already fetching it.
-     *
-     * Wait for that request to populate Redis.
-     */
-    const waitingCache =
-      await waitForCache(
-        PLANETS_KEY,
-      );
-
-    if (waitingCache) {
-      return {
-        data: waitingCache.data,
-        cached: true,
-        cachedAt: waitingCache.cachedAt,
-      };
+    if (cached) {
+        return {
+            data: cached.data,
+            cached: true,
+            cachedAt: cached.cachedAt,
+        };
     }
-  }
 
-  /*
-   * Re-check Redis after acquiring the lock.
-   *
-   * Another request may have populated the cache
-   * between our first GET and acquiring the lock.
-   */
-  const existing =
-    await getCache(PLANETS_KEY);
+    /*
+     * Nobody has the cache.
+     *
+     * Try to become the process that refreshes it.
+     */
+    const acquired =
+        await acquireLock(
+            PLANETS_LOCK_KEY,
+        );
 
-  if (existing) {
-    return {
-      data: existing.data,
-      cached: true,
-      cachedAt: existing.cachedAt,
-    };
-  }
+    if (!acquired) {
+        /*
+         * Another Vercel function is already fetching it.
+         *
+         * Wait for that request to populate Redis.
+         */
+        const waitingCache =
+            await waitForCache(
+                PLANETS_KEY,
+            );
 
-  const data =
-    await fetchHelldivers(
-      '/api/v1/planets',
+        if (waitingCache) {
+            return {
+                data: waitingCache.data,
+                cached: true,
+                cachedAt: waitingCache.cachedAt,
+            };
+        }
+    }
+
+    /*
+     * Re-check Redis after acquiring the lock.
+     *
+     * Another request may have populated the cache
+     * between our first GET and acquiring the lock.
+     */
+    const existing =
+        await getCache(PLANETS_KEY);
+
+    if (existing) {
+        return {
+            data: existing.data,
+            cached: true,
+            cachedAt: existing.cachedAt,
+        };
+    }
+
+    const data =
+        await fetchHelldivers(
+            '/api/v1/planets',
+        );
+
+    await setCache(
+        PLANETS_KEY,
+        data,
+        PLANETS_TTL,
     );
 
-  await setCache(
-    PLANETS_KEY,
-    data,
-    PLANETS_STALE_TTL,
-  );
 
-  return {
-    data,
-    cached: false,
-    cachedAt: Date.now(),
-  };
+    return {
+        data,
+        cached: false,
+        cachedAt: Date.now(),
+    };
 }
 
 
@@ -344,64 +345,65 @@ async function getPlanets() {
 /* -------------------------------------------------------------------------- */
 
 async function getWarId() {
-  const cached =
-    await getCache(WAR_ID_KEY);
+    const cached =
+        await getCache(WAR_ID_KEY);
 
-  if (cached) {
-    return {
-      data: cached.data,
-      cached: true,
-      cachedAt: cached.cachedAt,
-    };
-  }
-
-  const acquired =
-    await acquireLock(
-      WAR_ID_LOCK_KEY,
-    );
-
-  if (!acquired) {
-    const waitingCache =
-      await waitForCache(
-        WAR_ID_KEY,
-      );
-
-    if (waitingCache) {
-      return {
-        data: waitingCache.data,
-        cached: true,
-        cachedAt: waitingCache.cachedAt,
-      };
+    if (cached) {
+        return {
+            data: cached.data,
+            cached: true,
+            cachedAt: cached.cachedAt,
+        };
     }
-  }
 
-  const existing =
-    await getCache(WAR_ID_KEY);
+    const acquired =
+        await acquireLock(
+            WAR_ID_LOCK_KEY,
+        );
 
-  if (existing) {
-    return {
-      data: existing.data,
-      cached: true,
-      cachedAt: existing.cachedAt,
-    };
-  }
+    if (!acquired) {
+        const waitingCache =
+            await waitForCache(
+                WAR_ID_KEY,
+            );
 
-  const data =
-    await fetchHelldivers(
-      '/raw/api/WarSeason/current/WarID',
+        if (waitingCache) {
+            return {
+                data: waitingCache.data,
+                cached: true,
+                cachedAt: waitingCache.cachedAt,
+            };
+        }
+    }
+
+    const existing =
+        await getCache(WAR_ID_KEY);
+
+    if (existing) {
+        return {
+            data: existing.data,
+            cached: true,
+            cachedAt: existing.cachedAt,
+        };
+    }
+
+    const data =
+        await fetchHelldivers(
+            '/raw/api/WarSeason/current/WarID',
+        );
+
+    await setCache(
+        WAR_ID_KEY,
+        data,
+        WAR_ID_TTL,
     );
 
-  await setCache(
-    WAR_ID_KEY,
-    data,
-    WAR_ID_STALE_TTL,
-  );
 
-  return {
-    data,
-    cached: false,
-    cachedAt: Date.now(),
-  };
+    return {
+        data,
+        cached: false,
+        cachedAt: Date.now(),
+    };
 }
 
 
@@ -410,42 +412,43 @@ async function getWarId() {
 /* -------------------------------------------------------------------------- */
 
 async function getWarInfo(warId) {
-  /*
-   * The war ID is included in the key.
-   *
-   * When the war changes, the cache automatically points
-   * to a completely different entry.
-   */
-  const key =
-    `${WAR_INFO_KEY}:${warId}`;
+    /*
+     * The war ID is included in the key.
+     *
+     * When the war changes, the cache automatically points
+     * to a completely different entry.
+     */
+    const key =
+        `${WAR_INFO_KEY}:${warId}`;
 
-  const cached =
-    await getCache(key);
+    const cached =
+        await getCache(key);
 
-  if (cached) {
-    return {
-      data: cached.data,
-      cached: true,
-      cachedAt: cached.cachedAt,
-    };
-  }
+    if (cached) {
+        return {
+            data: cached.data,
+            cached: true,
+            cachedAt: cached.cachedAt,
+        };
+    }
 
-  const data =
-    await fetchHelldivers(
-      `/raw/api/WarSeason/${warId}/WarInfo`,
+    const data =
+        await fetchHelldivers(
+            `/raw/api/WarSeason/${warId}/WarInfo`,
+        );
+
+    await setCache(
+        key,
+        data,
+        WAR_INFO_TTL,
     );
 
-  await setCache(
-    key,
-    data,
-    WAR_INFO_STALE_TTL,
-  );
 
-  return {
-    data,
-    cached: false,
-    cachedAt: Date.now(),
-  };
+    return {
+        data,
+        cached: false,
+        cachedAt: Date.now(),
+    };
 }
 
 
@@ -454,41 +457,41 @@ async function getWarInfo(warId) {
 /* -------------------------------------------------------------------------- */
 
 async function getStaleData() {
-  const [
-    planets,
-    warId,
-  ] = await Promise.all([
-    getCache(PLANETS_KEY),
-    getCache(WAR_ID_KEY),
-  ]);
+    const [
+        planets,
+        warId,
+    ] = await Promise.all([
+        getCache(PLANETS_KEY),
+        getCache(WAR_ID_KEY),
+    ]);
 
-  let warInfo = null;
+    let warInfo = null;
 
-  const currentWarId =
-    warId?.data?.id;
+    const currentWarId =
+        warId?.data?.id;
 
-  if (currentWarId) {
-    warInfo =
-      await getCache(
-        `${WAR_INFO_KEY}:${currentWarId}`,
-      );
-  }
+    if (currentWarId) {
+        warInfo =
+            await getCache(
+                `${WAR_INFO_KEY}:${currentWarId}`,
+            );
+    }
 
-  if (!planets && !warInfo) {
-    return null;
-  }
+    if (!planets && !warInfo) {
+        return null;
+    }
 
-  return {
-    planets: planets?.data ?? [],
-    warId: warId?.data ?? null,
-    warInfo: warInfo?.data ?? null,
+    return {
+        planets: planets?.data ?? [],
+        warId: warId?.data ?? null,
+        warInfo: warInfo?.data ?? null,
 
-    databaseStatus: {
-      state: 'warning',
-      label: 'STALE',
-      cached: true,
-    },
-  };
+        databaseStatus: {
+            state: 'warning',
+            label: 'STALE',
+            cached: true,
+        },
+    };
 }
 
 
@@ -497,130 +500,130 @@ async function getStaleData() {
 /* -------------------------------------------------------------------------- */
 
 export default async function handler(
-  request,
-  response,
+    request,
+    response,
 ) {
-  if (request.method !== 'GET') {
-    return response
-      .status(405)
-      .json({
-        error: 'Method not allowed.',
-      });
-  }
-
-  try {
-    /*
-     * Planets and WarID can be fetched independently.
-     *
-     * If they are already cached, these are just Redis reads.
-     */
-    const [
-      planetsResult,
-      warIdResult,
-    ] = await Promise.all([
-      getPlanets(),
-      getWarId(),
-    ]);
-
-    const warId =
-      warIdResult?.data?.id;
-
-    let warInfoResult = {
-      data: null,
-      cached: false,
-      cachedAt: null,
-    };
-
-    if (warId) {
-      warInfoResult =
-        await getWarInfo(warId);
+    if (request.method !== 'GET') {
+        return response
+            .status(405)
+            .json({
+                error: 'Method not allowed.',
+            });
     }
 
-    const anyFreshData =
-      !planetsResult.cached ||
-      !warIdResult.cached ||
-      !warInfoResult.cached;
-
-    return response
-      .status(200)
-      .json({
-        planets:
-          planetsResult.data,
-
-        warId:
-          warIdResult.data,
-
-        warInfo:
-          warInfoResult.data,
-
-        databaseStatus: {
-          state: 'online',
-          label: 'ONLINE',
-          cached: !anyFreshData,
-        },
-      });
-
-  } catch (error) {
-    console.error(
-      '[SEAF] Galactic map API failed:',
-      error,
-    );
-
-    /*
-     * IMPORTANT:
-     *
-     * The upstream API failed.
-     *
-     * Try to serve the most recent Redis data instead
-     * of giving the user a 503.
-     */
     try {
-      const stale =
-        await getStaleData();
+        /*
+         * Planets and WarID can be fetched independently.
+         *
+         * If they are already cached, these are just Redis reads.
+         */
+        const [
+            planetsResult,
+            warIdResult,
+        ] = await Promise.all([
+            getPlanets(),
+            getWarId(),
+        ]);
 
-      if (stale) {
-        console.warn(
-          '[SEAF] Serving stale Galactic War data.',
-        );
+        const warId =
+            warIdResult?.data?.id;
+
+        let warInfoResult = {
+            data: null,
+            cached: false,
+            cachedAt: null,
+        };
+
+        if (warId) {
+            warInfoResult =
+                await getWarInfo(warId);
+        }
+
+        const anyFreshData =
+            !planetsResult.cached ||
+            !warIdResult.cached ||
+            !warInfoResult.cached;
 
         return response
-          .status(200)
-          .json({
-            ...stale,
+            .status(200)
+            .json({
+                planets:
+                    planetsResult.data,
 
-            databaseStatus: {
-              state: 'warning',
-              label: 'STALE',
-              cached: true,
-              error:
-                error?.message ||
-                'Upstream API unavailable.',
-            },
-          });
-      }
-    } catch (cacheError) {
-      console.error(
-        '[SEAF] Unable to retrieve stale cache:',
-        cacheError,
-      );
+                warId:
+                    warIdResult.data,
+
+                warInfo:
+                    warInfoResult.data,
+
+                databaseStatus: {
+                    state: 'online',
+                    label: 'ONLINE',
+                    cached: !anyFreshData,
+                },
+            });
+
+    } catch (error) {
+        console.error(
+            '[SEAF] Galactic map API failed:',
+            error,
+        );
+
+        /*
+         * IMPORTANT:
+         *
+         * The upstream API failed.
+         *
+         * Try to serve the most recent Redis data instead
+         * of giving the user a 503.
+         */
+        try {
+            const stale =
+                await getStaleData();
+
+            if (stale) {
+                console.warn(
+                    '[SEAF] Serving stale Galactic War data.',
+                );
+
+                return response
+                    .status(200)
+                    .json({
+                        ...stale,
+
+                        databaseStatus: {
+                            state: 'warning',
+                            label: 'STALE',
+                            cached: true,
+                            error:
+                                error?.message ||
+                                'Upstream API unavailable.',
+                        },
+                    });
+            }
+        } catch (cacheError) {
+            console.error(
+                '[SEAF] Unable to retrieve stale cache:',
+                cacheError,
+            );
+        }
+
+        /*
+         * No cached data exists.
+         *
+         * This is a genuine failure.
+         */
+        return response
+            .status(503)
+            .json({
+                error:
+                    error?.message ||
+                    'Unable to retrieve Galactic War data.',
+
+                databaseStatus: {
+                    state: 'error',
+                    label: 'OFFLINE',
+                },
+            });
     }
-
-    /*
-     * No cached data exists.
-     *
-     * This is a genuine failure.
-     */
-    return response
-      .status(503)
-      .json({
-        error:
-          error?.message ||
-          'Unable to retrieve Galactic War data.',
-
-        databaseStatus: {
-          state: 'error',
-          label: 'OFFLINE',
-        },
-      });
-  }
 }
