@@ -30,11 +30,11 @@ JJ:
 
 5) Adjust Text that shows the Regiment Specialty in only ONE line, if it's a long name
 
-hamberger menu playes peekaboo
+hamberger menu playes peekaboo - done
 
-api errors ltos and ltos
+api errors ltos and ltos - done
 
-fleet ships circle is too big
+fleet ships circle is too big - done
 
 basic equipment for seaf isnt in loadouts
 
