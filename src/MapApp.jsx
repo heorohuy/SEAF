@@ -12,6 +12,11 @@ import {
   sectors as fallbackSectors,
 } from './data/galaxy';
 
+import {
+  MAP_DIMENSIONS,
+  DEFAULT_MAP_DIMENSION,
+} from './data/mapDimensions';
+
 import './App.css';
 
 // Google Sheets
@@ -43,6 +48,8 @@ import {
 } from './api/shipTracking';
 
 import ShipPanel from './components/ShipPanel';
+
+
 
 const parseCellValue = (cell) => {
   if (cell == null) return undefined;
@@ -413,6 +420,14 @@ export default function App() {
       fallbackPlanets[0] ?? null,
     );
 
+  const [mapDimension, setMapDimension] = useState(
+    DEFAULT_MAP_DIMENSION,
+  );
+
+  const activeDimension =
+    MAP_DIMENSIONS[mapDimension] ||
+    MAP_DIMENSIONS[DEFAULT_MAP_DIMENSION];
+
   const [zoom, setZoom] = useState(1);
 
   const [offset, setOffset] = useState({
@@ -461,6 +476,39 @@ export default function App() {
 
   const [activeRegiment, setActiveRegiment] =
     useState(null);
+
+
+  const handleDimensionChange = (dimension) => {
+    if (!MAP_DIMENSIONS[dimension]) {
+      return;
+    }
+
+    setMapDimension(dimension);
+
+    setSelectedPlanet(null);
+    setSelectedShip(null);
+    setActiveFob(null);
+    setActiveRegiment(null);
+    setSearchTerm('');
+    setSearchError(null);
+
+    setZoom(1);
+    setOffset({
+      x: 0,
+      y: 0,
+    });
+
+    if (dimension === 'void') {
+      const firstVoidPlanet =
+        MAP_DIMENSIONS.void.planets[0];
+
+      if (firstVoidPlanet) {
+        requestAnimationFrame(() => {
+          setSelectedPlanet(firstVoidPlanet);
+        });
+      }
+    }
+  };
 
   // ==========================================================
   // HD2CLANS FLEET
@@ -547,51 +595,60 @@ export default function App() {
   /*
    * Galactic map API.
    */
-useEffect(() => {
-  let mounted = true;
+  useEffect(() => {
+    let mounted = true;
 
-  const loadGalaxy = async () => {
-    try {
-      const data = await fetchGalacticMap();
-
-      if (!mounted) {
+    const loadGalaxy = async () => {
+      if (mapDimension !== 'galaxy') {
         return;
       }
+      try {
+        const data = await fetchGalacticMap();
 
-      if (data.planets?.length) {
-        setPlanets(data.planets);
-        setSelectedPlanet(data.planets[0]);
-        setActiveFob(null);
+        if (!mounted) {
+          return;
+        }
+
+        if (data.planets?.length) {
+          setPlanets(data.planets);
+          setSelectedPlanet(data.planets[0]);
+          setActiveFob(null);
+        }
+
+        if (data.connections) {
+          setConnections(data.connections);
+        }
+
+        if (data.sectors) {
+          setSectors(data.sectors);
+        }
+
+        setError(null);
+      } catch (err) {
+        if (!mounted) {
+          return;
+        }
+
+        setError(err?.message || String(err));
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
+    };
 
-      if (data.connections) {
-        setConnections(data.connections);
-      }
-
-      if (data.sectors) {
-        setSectors(data.sectors);
-      }
-
+    if (mapDimension !== 'galaxy') {
+      setLoading(false);
       setError(null);
-    } catch (err) {
-      if (!mounted) {
-        return;
-      }
-
-      setError(err?.message || String(err));
-    } finally {
-      if (mounted) {
-        setLoading(false);
-      }
+      return;
     }
-  };
 
-  void loadGalaxy();
+    void loadGalaxy();
 
-  return () => {
-    mounted = false;
-  };
-}, []);
+    return () => {
+      mounted = false;
+    };
+  }, [mapDimension]);
 
   /*
    * HD2Clans fleet polling.
@@ -1103,6 +1160,31 @@ useEffect(() => {
     };
   }, []);
 
+  useEffect(() => {
+    const nextDimension =
+      MAP_DIMENSIONS[mapDimension];
+
+    if (!nextDimension) {
+      return;
+    }
+
+    setZoom(1);
+    setOffset({
+      x: 0,
+      y: 0,
+    });
+
+    setSelectedPlanet(
+      nextDimension.planets[0] || null,
+    );
+
+    setSelectedShip(null);
+    setActiveFob(null);
+    setActiveRegiment(null);
+    setSearchTerm('');
+    setSearchError(null);
+  }, [mapDimension]);
+
   /*
    * Mouse map movement.
    */
@@ -1208,6 +1290,40 @@ useEffect(() => {
       });
     };
 
+  const handleCenterOnDimension = () => {
+    if (mapDimension === 'galaxy') {
+      handleCenterOnSuperEarth();
+      return;
+    }
+
+    const sourcePlanet =
+      activeDimension.planets.find(
+        (planet) =>
+          planet.isSourcePlanet,
+      ) ||
+      activeDimension.planets[0];
+
+    if (!sourcePlanet) {
+      return;
+    }
+
+    setSelectedPlanet(sourcePlanet);
+    setSelectedShip(null);
+    setActiveFob(null);
+    setActiveRegiment(null);
+
+    const targetZoom = 4;
+
+    setZoom(targetZoom);
+
+    requestAnimationFrame(() => {
+      centerOnPlanet(
+        sourcePlanet,
+        targetZoom,
+      );
+    });
+  };
+
   /*
    * Planet search.
    */
@@ -1229,8 +1345,13 @@ useEffect(() => {
       return;
     }
 
+    const searchPlanets =
+      mapDimension === 'galaxy'
+        ? planets
+        : activeDimension.planets;
+
     const match =
-      planets.find(
+      searchPlanets.find(
         (planet) =>
           planet.name
             ?.toLowerCase()
@@ -1480,76 +1601,45 @@ useEffect(() => {
     return 'health-good';
   };
 
+  const displayedPlanets =
+    mapDimension === 'galaxy'
+      ? planets
+      : activeDimension.planets;
+
+  const displayedConnections =
+    mapDimension === 'galaxy'
+      ? connections
+      : activeDimension.connections;
+
+  const displayedSectors =
+    mapDimension === 'galaxy'
+      ? sectors
+      : activeDimension.sectors;
+
   return (
     <div className="app">
-      {/* <header className="top-bar">
-        <div
-          className={`logo ${logoExpanded
-              ? 'expanded'
-              : ''
-            }`}
-          onClick={() =>
-            setLogoExpanded(
-              (previous) =>
-                !previous,
-            )
-          }
-        >
-          <Shield size={24} />
-
-          <span>
-            S.E.A.F. -
-            L.E.M.O.N
-          </span>
-
-          {logoExpanded && (
-            <div className="logo-expanded">
-              <div>
-                SUPER EARTH ARMED
-                FORCES
-              </div>
-
-              <div>
-                LOGISTICS &
-                EMERGENCY
-                MOVEMENT
-                OPERATIONS
-                NETWORK
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="war-status">
-          <span>
-            WAR STATUS
-          </span>
-
-          <strong>
-            ACTIVE
-          </strong>
-        </div>
-
-        <NavigationMenu />
-      </header> */}
 
       <SiteHeader
-              databaseStatus={{
-                state: loading
-                  ? 'loading'
-                  : error
-                    ? 'error'
-                    : 'online',
-                label: loading
-                  ? 'SYNCING'
-                  : error
-                    ? 'OFFLINE'
-                    : 'ONLINE',
-              }}
-            />
+        databaseStatus={{
+          state: loading
+            ? 'loading'
+            : error
+              ? 'error'
+              : 'online',
+          label: loading
+            ? 'SYNCING'
+            : error
+              ? 'OFFLINE'
+              : 'ONLINE',
+        }}
+      />
 
-      <main className="galaxy">
-        <div className="stars" />
+      <main
+        className={`galaxy galaxy--${mapDimension}`}
+      >
+        <div
+          className={`stars stars--${mapDimension}`}
+        />
 
         {/* <div className="ad-strip">
           <AdBanner />
@@ -1557,11 +1647,9 @@ useEffect(() => {
 
         <GalaxyMap
           containerRef={mapContainerRef}
-          planets={planets}
-          connections={
-            connections
-          }
-          sectors={sectors}
+          planets={displayedPlanets}
+          connections={displayedConnections}
+          sectors={displayedSectors}
           selectedPlanet={
             selectedPlanet
           }
@@ -1608,78 +1696,84 @@ useEffect(() => {
           }
         />
 
-        <div
-          className="map-title"
-          onClick={
-            handleCenterOnSuperEarth
-          }
-          role="button"
-          tabIndex={0}
-          title="Center map on Super Earth"
-          onKeyDown={(event) => {
-            if (
-              event.key ===
-              'Enter' ||
-              event.key === ' '
-            ) {
-              event.preventDefault();
-
-              handleCenterOnSuperEarth();
-            }
-          }}
-        >
+        <div className="map-title">
           <Crosshair size={18} />
 
-          <span>
-            GALACTIC MAP
+          <label
+            className="map-dimension-selector"
+            htmlFor="map-dimension"
+          >
+            <span className="map-dimension-label">
+              MAP SPACE
+            </span>
+
+            <select
+              id="map-dimension"
+              value={mapDimension}
+              onChange={(event) =>
+                handleDimensionChange(
+                  event.target.value,
+                )
+              }
+              aria-label="Select map space"
+            >
+              {Object.values(MAP_DIMENSIONS).map(
+                (dimension) => (
+                  <option
+                    key={dimension.id}
+                    value={dimension.id}
+                  >
+                    {dimension.label}
+                  </option>
+                ),
+              )}
+            </select>
+          </label>
+
+          <span className="map-dimension-description">
+            {activeDimension.description}
           </span>
 
-          {loading && (
-            <span
-              style={{
-                marginLeft: 8,
-                color: '#8f9aa5',
-                fontSize: 10,
-              }}
-            >
-              LOADING…
-            </span>
-          )}
+          {mapDimension === 'galaxy' &&
+            loading && (
+              <span
+                className="map-status-loading"
+              >
+                LOADING…
+              </span>
+            )}
 
-          {error && (
-            <span
-              style={{
-                marginLeft: 8,
-                color: '#ff6b6b',
-                fontSize: 10,
-              }}
-            >
-              API ERROR
-            </span>
-          )}
+          {mapDimension === 'galaxy' &&
+            error && (
+              <span
+                className="map-status-error"
+              >
+                API ERROR
+              </span>
+            )}
 
-          {shipLoading && (
-            <span
-              style={{
-                marginLeft: 8,
-                color: '#ffd166',
-                fontSize: 10,
-              }}
-            >
-              FLEET SYNC…
-            </span>
-          )}
+          {mapDimension === 'galaxy' &&
+            shipLoading && (
+              <span
+                className="map-status-fleet"
+              >
+                FLEET SYNC…
+              </span>
+            )}
 
-          {shipError && (
-            <span
-              style={{
-                marginLeft: 8,
-                color: '#ff8a8a',
-                fontSize: 10,
-              }}
-              title={shipError}
-            >
-              FLEET API ERROR
+          {mapDimension === 'galaxy' &&
+            shipError && (
+              <span
+                className="map-status-error"
+                title={shipError}
+              >
+                FLEET API ERROR
+              </span>
+            )}
+
+          {mapDimension === 'void' && (
+            <span className="map-status-void">
+              SIGNAL DISTORTION
             </span>
           )}
         </div>
@@ -1739,33 +1833,48 @@ useEffect(() => {
         </div>
 
         <div className="legend-panel">
-          <span>
-            LEGEND
-          </span>
+          <span>LEGEND</span>
 
-          <div className="legend-row">
-            <span className="legend-dot super-earth" />
-            {' '}
-            Super Earth
-          </div>
+          {mapDimension === 'galaxy' ? (
+            <>
+              <div className="legend-row">
+                <span className="legend-dot super-earth" />
+                Super Earth
+              </div>
 
-          <div className="legend-row">
-            <span className="legend-dot automatons" />
-            {' '}
-            Automatons
-          </div>
+              <div className="legend-row">
+                <span className="legend-dot automatons" />
+                Automatons
+              </div>
 
-          <div className="legend-row">
-            <span className="legend-dot terminids" />
-            {' '}
-            Terminids
-          </div>
+              <div className="legend-row">
+                <span className="legend-dot terminids" />
+                Terminids
+              </div>
 
-          <div className="legend-row">
-            <span className="legend-dot illuminate" />
-            {' '}
-            Illuminate
-          </div>
+              <div className="legend-row">
+                <span className="legend-dot illuminate" />
+                Illuminate
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="legend-row">
+                <span className="legend-dot illuminate" />
+                Illuminate
+              </div>
+
+              <div className="legend-row">
+                <span className="legend-dot void-source" />
+                Source Planet
+              </div>
+
+              <div className="legend-row">
+                <span className="legend-dot void-unknown" />
+                Unidentified
+              </div>
+            </>
+          )}
         </div>
 
         {selectedShip ? (
@@ -2100,8 +2209,8 @@ useEffect(() => {
                             className={`regiment-button ${getFdpHealthClass(
                               regiment.fdp,
                             )} ${isActive
-                                ? 'active'
-                                : ''
+                              ? 'active'
+                              : ''
                               }`}
                             type="button"
                             onClick={() => {

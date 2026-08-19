@@ -20,6 +20,12 @@ export default function Planet({
   const factoryX = planet.x + 2.8;
   const factoryY = planet.y - 9;
 
+  data-source-planet={
+  planet.isSourcePlanet
+    ? 'true'
+    : undefined
+}
+
   return (
     <g
       key={planet.id}
