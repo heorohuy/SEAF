@@ -109,13 +109,17 @@ button {
   position: absolute;
   top: 114px;
   left: 28px;
+
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+
   color: #aeb8c1;
   font-size: calc(11px * var(--ui-scale));
   letter-spacing: 2px;
   text-transform: uppercase;
+
   z-index: 5;
 }
 
@@ -242,7 +246,7 @@ button {
 
 .search-widget {
   position: absolute;
-  top: 154px;
+  top: 285px;
   left: 24px;
   z-index: 5;
   display: flex;
@@ -684,7 +688,7 @@ button {
   }
 
   .search-widget {
-    top: 112px;
+    top: 285px;
     left: 16px;
     right: 16px;
   }
@@ -1429,8 +1433,9 @@ button {
 
 .map-dimension-selector {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
 }
 
 .map-dimension-label {
@@ -1692,4 +1697,21 @@ button {
 .map-center-button:focus-visible {
   outline: 1px solid currentColor;
   outline-offset: 3px;
+}
+
+.map-title-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.map-center-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.map-dimension-selector {
+  display: block;
 }

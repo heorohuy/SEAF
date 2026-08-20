@@ -1811,54 +1811,58 @@ export default function App() {
         />
 
         <div className="map-title">
-          <button
-            type="button"
-            className="map-center-button"
-            onClick={handleCenterOnDimension}
-            aria-label={
-              mapDimension === 'galaxy'
-                ? 'Center Galactic Map'
-                : 'Center Void Map'
-            }
-            title={
-              mapDimension === 'galaxy'
-                ? 'Center Galactic Map'
-                : 'Center Void Map'
-            }
-          >
-            <Crosshair size={18} />
-          </button>
+          <div className="map-title-controls">
+            <div className="map-center-control">
+              <button
+                type="button"
+                className="map-center-button"
+                onClick={handleCenterOnDimension}
+                aria-label={
+                  mapDimension === 'galaxy'
+                    ? 'Center Galactic Map'
+                    : 'Center Void Map'
+                }
+                title={
+                  mapDimension === 'galaxy'
+                    ? 'Center Galactic Map'
+                    : 'Center Void Map'
+                }
+              >
+                <Crosshair size={18} />
+              </button>
 
-          <label
-            className="map-dimension-selector"
-            htmlFor="map-dimension"
-          >
-            <span className="map-dimension-label">
-              MAP Center
-            </span>
+              <span className="map-dimension-label">
+                MAP Center
+              </span>
+            </div>
 
-            <select
-              id="map-dimension"
-              value={mapDimension}
-              onChange={(event) =>
-                handleDimensionChange(
-                  event.target.value,
-                )
-              }
-              aria-label="Select map space"
+            <label
+              className="map-dimension-selector"
+              htmlFor="map-dimension"
             >
-              {Object.values(MAP_DIMENSIONS).map(
-                (dimension) => (
-                  <option
-                    key={dimension.id}
-                    value={dimension.id}
-                  >
-                    {dimension.label}
-                  </option>
-                ),
-              )}
-            </select>
-          </label>
+              <select
+                id="map-dimension"
+                value={mapDimension}
+                onChange={(event) =>
+                  handleDimensionChange(
+                    event.target.value,
+                  )
+                }
+                aria-label="Select map space"
+              >
+                {Object.values(MAP_DIMENSIONS).map(
+                  (dimension) => (
+                    <option
+                      key={dimension.id}
+                      value={dimension.id}
+                    >
+                      {dimension.label}
+                    </option>
+                  ),
+                )}
+              </select>
+            </label>
+          </div>
 
           <span className="map-dimension-description">
             {activeDimension.description}
