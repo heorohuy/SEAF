@@ -20,18 +20,16 @@ export default function Planet({
   const factoryX = planet.x + 2.8;
   const factoryY = planet.y - 9;
 
-  data-source-planet={
-  planet.isSourcePlanet
-    ? 'true'
-    : undefined
-}
-
   return (
     <g
       key={planet.id}
-      className={`planet-svg ${planet.faction} ${
-        selected ? 'selected' : ''
-      }`}
+      className={`planet-svg ${planet.faction} ${selected ? 'selected' : ''
+        }`}
+      data-source-planet={
+        planet.isSourcePlanet
+          ? 'true'
+          : undefined
+      }
       onClick={() => onSelect(planet)}
       onMouseDown={(e) => e.stopPropagation()}
       role="button"
