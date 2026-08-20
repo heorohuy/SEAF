@@ -498,17 +498,6 @@ export default function App() {
       x: 0,
       y: 0,
     });
-
-    if (dimension === 'void') {
-      const firstVoidPlanet =
-        MAP_DIMENSIONS.void.planets[0];
-
-      if (firstVoidPlanet) {
-        requestAnimationFrame(() => {
-          setSelectedPlanet(firstVoidPlanet);
-        });
-      }
-    }
   };
 
   // ==========================================================
@@ -560,18 +549,39 @@ export default function App() {
     [planets],
   );
 
-  const voidPlanetsPositioned = useMemo(() => {
-    const positioned = voidPlanets.filter(
-      (planet) =>
-        Number.isFinite(planet?.x) &&
-        Number.isFinite(planet?.y),
-    );
+const voidPlanetsPositioned = useMemo(() => {
+  const positioned = voidPlanets.filter(
+    (planet) =>
+      Number.isFinite(planet?.x) &&
+      Number.isFinite(planet?.y),
+  );
 
-    if (positioned.length === 0) {
-      return [];
-    }
+  if (positioned.length === 0) {
+    return [];
+  }
 
-    const centerOfMass = positioned.reduce(
+  const SVG_SIZE = 960;
+  const SVG_CENTER = SVG_SIZE / 2;
+
+  /*
+   * The API planet coordinates use the same coordinate
+   * convention as the Galaxy map data.
+   *
+   * The Galaxy renderer flips Y for SVG.
+   *
+   * The Void should use that same visual orientation,
+   * but independently center its planets around their
+   * own center of mass.
+   */
+  const displayCoordinates = positioned.map(
+    (planet) => ({
+      ...planet,
+      y: SVG_SIZE - planet.y,
+    }),
+  );
+
+  const centerOfMass =
+    displayCoordinates.reduce(
       (center, planet) => ({
         x: center.x + planet.x,
         y: center.y + planet.y,
@@ -579,12 +589,14 @@ export default function App() {
       { x: 0, y: 0 },
     );
 
-    centerOfMass.x /= positioned.length;
-    centerOfMass.y /= positioned.length;
+  centerOfMass.x /=
+    displayCoordinates.length;
 
-    const SVG_CENTER = 480;
+  centerOfMass.y /=
+    displayCoordinates.length;
 
-    return positioned.map((planet) => ({
+  return displayCoordinates.map(
+    (planet) => ({
       ...planet,
 
       x:
@@ -594,8 +606,9 @@ export default function App() {
       y:
         SVG_CENTER +
         (planet.y - centerOfMass.y),
-    }));
-  }, [voidPlanets]);
+    }),
+  );
+}, [voidPlanets]);
 
   const galaxyPlanetIds = useMemo(
     () =>
@@ -1288,14 +1301,14 @@ export default function App() {
       setSelectedPlanet(firstGalaxyPlanet);
     } else {
       const firstVoidPlanet =
-        voidPlanets[0] || null;
+        voidPlanetsPositioned[0] || null;
 
       setSelectedPlanet(firstVoidPlanet);
     }
   }, [
     mapDimension,
     galaxyPlanets,
-    voidPlanets,
+    voidPlanetsPositioned,
   ]);
 
   /*
@@ -1448,7 +1461,7 @@ export default function App() {
     const searchPlanets =
       mapDimension === 'galaxy'
         ? galaxyPlanets
-        : voidPlanets;
+        : voidPlanetsPositioned;
 
     const match =
       searchPlanets.find(

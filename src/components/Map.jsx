@@ -523,6 +523,7 @@ export default function GalaxyMap({
                   ship={ship}
                   shipIndex={shipIndex}
                   shipCount={planetShips.length}
+                  mapDimension={mapDimension}
                   selected={
                     String(selectedShip?.id) ===
                     String(ship.id)

@@ -16,6 +16,7 @@ export default function ShipMarker({
   shipIndex,
   shipCount,
   selected = false,
+  mapDimension = 'galaxy',
   onSelect,
 }) {
   if (!ship) {
@@ -27,6 +28,14 @@ export default function ShipMarker({
     shipIndex,
     shipCount,
   );
+
+  const displayPosition =
+  mapDimension === 'void'
+    ? {
+        ...position,
+        y: 960 - position.y,
+      }
+    : position;
 
   if (!position) {
     return null;
@@ -56,7 +65,7 @@ export default function ShipMarker({
       className={`ship-marker ${
         selected ? 'selected' : ''
       }`}
-      transform={`translate(${position.x} ${position.y})`}
+      transform={`translate(${displayPosition.x} ${displayPosition.y})`}
       onClick={handleSelect}
       onKeyDown={handleKeyDown}
       role="button"
