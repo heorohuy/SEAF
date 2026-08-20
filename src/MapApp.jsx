@@ -549,66 +549,66 @@ export default function App() {
     [planets],
   );
 
-const voidPlanetsPositioned = useMemo(() => {
-  const positioned = voidPlanets.filter(
-    (planet) =>
-      Number.isFinite(planet?.x) &&
-      Number.isFinite(planet?.y),
-  );
-
-  if (positioned.length === 0) {
-    return [];
-  }
-
-  const SVG_SIZE = 960;
-  const SVG_CENTER = SVG_SIZE / 2;
-
-  /*
-   * The API planet coordinates use the same coordinate
-   * convention as the Galaxy map data.
-   *
-   * The Galaxy renderer flips Y for SVG.
-   *
-   * The Void should use that same visual orientation,
-   * but independently center its planets around their
-   * own center of mass.
-   */
-  const displayCoordinates = positioned.map(
-    (planet) => ({
-      ...planet,
-      y: SVG_SIZE - planet.y,
-    }),
-  );
-
-  const centerOfMass =
-    displayCoordinates.reduce(
-      (center, planet) => ({
-        x: center.x + planet.x,
-        y: center.y + planet.y,
-      }),
-      { x: 0, y: 0 },
+  const voidPlanetsPositioned = useMemo(() => {
+    const positioned = voidPlanets.filter(
+      (planet) =>
+        Number.isFinite(planet?.x) &&
+        Number.isFinite(planet?.y),
     );
 
-  centerOfMass.x /=
-    displayCoordinates.length;
+    if (positioned.length === 0) {
+      return [];
+    }
 
-  centerOfMass.y /=
-    displayCoordinates.length;
+    const SVG_SIZE = 960;
+    const SVG_CENTER = SVG_SIZE / 2;
 
-  return displayCoordinates.map(
-    (planet) => ({
-      ...planet,
+    /*
+     * The API planet coordinates use the same coordinate
+     * convention as the Galaxy map data.
+     *
+     * The Galaxy renderer flips Y for SVG.
+     *
+     * The Void should use that same visual orientation,
+     * but independently center its planets around their
+     * own center of mass.
+     */
+    const displayCoordinates = positioned.map(
+      (planet) => ({
+        ...planet,
+        y: SVG_SIZE - planet.y,
+      }),
+    );
 
-      x:
-        SVG_CENTER +
-        (planet.x - centerOfMass.x),
+    const centerOfMass =
+      displayCoordinates.reduce(
+        (center, planet) => ({
+          x: center.x + planet.x,
+          y: center.y + planet.y,
+        }),
+        { x: 0, y: 0 },
+      );
 
-      y:
-        SVG_CENTER +
-        (planet.y - centerOfMass.y),
-    }),
-  );
-}, [voidPlanets]);
+    centerOfMass.x /=
+      displayCoordinates.length;
+
+    centerOfMass.y /=
+      displayCoordinates.length;
+
+    return displayCoordinates.map(
+      (planet) => ({
+        ...planet,
+
+        x:
+          SVG_CENTER +
+          (planet.x - centerOfMass.x),
+
+        y:
+          SVG_CENTER +
+          (planet.y - centerOfMass.y),
+      }),
+    );
+  }, [voidPlanets]);
 
   const galaxyPlanetIds = useMemo(
     () =>
@@ -1427,7 +1427,7 @@ const voidPlanetsPositioned = useMemo(() => {
     setActiveFob(null);
     setActiveRegiment(null);
 
-    const targetZoom = 1;
+    const targetZoom = 6;
 
     setZoom(targetZoom);
 
@@ -1811,14 +1811,30 @@ const voidPlanetsPositioned = useMemo(() => {
         />
 
         <div className="map-title">
-          <Crosshair size={18} />
+          <button
+            type="button"
+            className="map-center-button"
+            onClick={handleCenterOnDimension}
+            aria-label={
+              mapDimension === 'galaxy'
+                ? 'Center Galactic Map'
+                : 'Center Void Map'
+            }
+            title={
+              mapDimension === 'galaxy'
+                ? 'Center Galactic Map'
+                : 'Center Void Map'
+            }
+          >
+            <Crosshair size={18} />
+          </button>
 
           <label
             className="map-dimension-selector"
             htmlFor="map-dimension"
           >
             <span className="map-dimension-label">
-              MAP SPACE
+              MAP Center
             </span>
 
             <select

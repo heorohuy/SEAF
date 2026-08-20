@@ -1643,3 +1643,53 @@ button {
   background: #8b5cf6;
   border: 1px dashed rgba(255, 255, 255, 0.55);
 }
+
+.void-classification {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  margin-top: 14px;
+  padding: 9px 10px;
+
+  border: 1px solid rgba(192, 132, 252, 0.2);
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(192, 132, 252, 0.08),
+      rgba(255, 255, 255, 0.02)
+    );
+}
+
+.void-classification span {
+  color: #9f8aad;
+  font-size: calc(9px * var(--ui-scale));
+  letter-spacing: 1.5px;
+}
+
+.void-classification strong {
+  color: #e9d5ff;
+  font-size: calc(11px * var(--ui-scale));
+  letter-spacing: 1px;
+}
+
+.map-center-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.map-center-button:hover {
+  color: #fff;
+}
+
+.map-center-button:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 3px;
+}
