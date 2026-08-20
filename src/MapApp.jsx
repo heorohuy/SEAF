@@ -1,10 +1,12 @@
-import { useRef, useState, useEffect, useCallback, } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo, } from 'react';
 import { Crosshair, Shield, Globe, ZoomIn, ZoomOut } from 'lucide-react';
 import GalaxyMap from './components/Map';
 
 import NavigationMenu from './components/NavigationMenu';
 
-import fetchGalacticMap from './api/galacticWar';
+import fetchGalacticMap, {
+  buildSectors,
+} from './api/galacticWar';
 
 import {
   planets as fallbackPlanets,
@@ -477,7 +479,6 @@ export default function App() {
   const [activeRegiment, setActiveRegiment] =
     useState(null);
 
-
   const handleDimensionChange = (dimension) => {
     if (!MAP_DIMENSIONS[dimension]) {
       return;
@@ -540,6 +541,112 @@ export default function App() {
   const fleetAbortControllerRef =
     useRef(null);
 
+  //////////////////////////
+  /////Void Dimension///////
+  //////////////////////////
+
+  const isVoidPlanet = (planet) =>
+    String(planet?.sector ?? '')
+      .trim()
+      .toLowerCase() === 'void';
+
+  const galaxyPlanets = useMemo(
+    () => planets.filter((planet) => !isVoidPlanet(planet)),
+    [planets],
+  );
+
+  const voidPlanets = useMemo(
+    () => planets.filter(isVoidPlanet),
+    [planets],
+  );
+
+  const voidPlanetsPositioned = useMemo(() => {
+    const positioned = voidPlanets.filter(
+      (planet) =>
+        Number.isFinite(planet?.x) &&
+        Number.isFinite(planet?.y),
+    );
+
+    if (positioned.length === 0) {
+      return [];
+    }
+
+    const centerOfMass = positioned.reduce(
+      (center, planet) => ({
+        x: center.x + planet.x,
+        y: center.y + planet.y,
+      }),
+      { x: 0, y: 0 },
+    );
+
+    centerOfMass.x /= positioned.length;
+    centerOfMass.y /= positioned.length;
+
+    const SVG_CENTER = 480;
+
+    return positioned.map((planet) => ({
+      ...planet,
+
+      x:
+        SVG_CENTER +
+        (planet.x - centerOfMass.x),
+
+      y:
+        SVG_CENTER +
+        (planet.y - centerOfMass.y),
+    }));
+  }, [voidPlanets]);
+
+  const galaxyPlanetIds = useMemo(
+    () =>
+      new Set(
+        galaxyPlanets.map((planet) =>
+          String(planet.id),
+        ),
+      ),
+    [galaxyPlanets],
+  );
+
+  const voidPlanetIds = useMemo(
+    () =>
+      new Set(
+        voidPlanets.map((planet) =>
+          String(planet.id),
+        ),
+      ),
+    [voidPlanets],
+  );
+
+  const galaxyConnections = useMemo(
+    () =>
+      connections.filter(
+        ([fromId, toId]) =>
+          galaxyPlanetIds.has(String(fromId)) &&
+          galaxyPlanetIds.has(String(toId)),
+      ),
+    [connections, galaxyPlanetIds],
+  );
+
+  const voidConnections = useMemo(
+    () =>
+      connections.filter(
+        ([fromId, toId]) =>
+          voidPlanetIds.has(String(fromId)) &&
+          voidPlanetIds.has(String(toId)),
+      ),
+    [connections, voidPlanetIds],
+  );
+
+  const galaxySectors = useMemo(
+    () => buildSectors(galaxyPlanets),
+    [galaxyPlanets],
+  );
+
+  const voidSectors = useMemo(
+    () => buildSectors(voidPlanetsPositioned),
+    [voidPlanetsPositioned],
+  );
+
   /*
    * Centering is declared before the effects that
    * use it. This avoids React Compiler's
@@ -547,8 +654,7 @@ export default function App() {
    */
   const centerOnPlanet = useCallback(
     (planet, targetZoom) => {
-      const container =
-        mapContainerRef.current;
+      const container = mapContainerRef.current;
 
       if (
         !container ||
@@ -561,9 +667,7 @@ export default function App() {
         return;
       }
 
-      const rect =
-        container.getBoundingClientRect();
-
+      const rect = container.getBoundingClientRect();
       const svgSize = 960;
 
       const scale = Math.min(
@@ -571,8 +675,12 @@ export default function App() {
         rect.height / svgSize,
       );
 
-      const flippedY =
-        svgSize - planet.y;
+      // Galaxy coordinates are vertically flipped by Map.jsx.
+      // Void coordinates are rendered directly, so do not flip them.
+      const mapY =
+        mapDimension === 'galaxy'
+          ? svgSize - planet.y
+          : planet.y;
 
       const offsetX =
         -(planet.x - svgSize / 2) *
@@ -580,7 +688,7 @@ export default function App() {
         targetZoom;
 
       const offsetY =
-        -(flippedY - svgSize / 2) *
+        -(mapY - svgSize / 2) *
         scale *
         targetZoom;
 
@@ -588,8 +696,7 @@ export default function App() {
         x: offsetX,
         y: offsetY,
       });
-    },
-    [],
+    }, [mapDimension],
   );
 
   /*
@@ -599,9 +706,6 @@ export default function App() {
     let mounted = true;
 
     const loadGalaxy = async () => {
-      if (mapDimension !== 'galaxy') {
-        return;
-      }
       try {
         const data = await fetchGalacticMap();
 
@@ -611,7 +715,13 @@ export default function App() {
 
         if (data.planets?.length) {
           setPlanets(data.planets);
-          setSelectedPlanet(data.planets[0]);
+
+          setSelectedPlanet(
+            data.planets.find(
+              (planet) => planet.sector !== 'Void'
+            ) || data.planets[0]
+          );
+
           setActiveFob(null);
         }
 
@@ -637,18 +747,12 @@ export default function App() {
       }
     };
 
-    if (mapDimension !== 'galaxy') {
-      setLoading(false);
-      setError(null);
-      return;
-    }
-
     void loadGalaxy();
 
     return () => {
       mounted = false;
     };
-  }, [mapDimension]);
+  }, []);
 
   /*
    * HD2Clans fleet polling.
@@ -1161,10 +1265,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const nextDimension =
-      MAP_DIMENSIONS[mapDimension];
-
-    if (!nextDimension) {
+    if (!MAP_DIMENSIONS[mapDimension]) {
       return;
     }
 
@@ -1174,16 +1275,28 @@ export default function App() {
       y: 0,
     });
 
-    setSelectedPlanet(
-      nextDimension.planets[0] || null,
-    );
-
     setSelectedShip(null);
     setActiveFob(null);
     setActiveRegiment(null);
     setSearchTerm('');
     setSearchError(null);
-  }, [mapDimension]);
+
+    if (mapDimension === 'galaxy') {
+      const firstGalaxyPlanet =
+        galaxyPlanets[0] || null;
+
+      setSelectedPlanet(firstGalaxyPlanet);
+    } else {
+      const firstVoidPlanet =
+        voidPlanets[0] || null;
+
+      setSelectedPlanet(firstVoidPlanet);
+    }
+  }, [
+    mapDimension,
+    galaxyPlanets,
+    voidPlanets,
+  ]);
 
   /*
    * Mouse map movement.
@@ -1296,31 +1409,18 @@ export default function App() {
       return;
     }
 
-    const sourcePlanet =
-      activeDimension.planets.find(
-        (planet) =>
-          planet.isSourcePlanet,
-      ) ||
-      activeDimension.planets[0];
-
-    if (!sourcePlanet) {
-      return;
-    }
-
-    setSelectedPlanet(sourcePlanet);
+    setSelectedPlanet(null);
     setSelectedShip(null);
     setActiveFob(null);
     setActiveRegiment(null);
 
-    const targetZoom = 4;
+    const targetZoom = 1;
 
     setZoom(targetZoom);
 
-    requestAnimationFrame(() => {
-      centerOnPlanet(
-        sourcePlanet,
-        targetZoom,
-      );
+    setOffset({
+      x: 0,
+      y: 0,
     });
   };
 
@@ -1347,8 +1447,8 @@ export default function App() {
 
     const searchPlanets =
       mapDimension === 'galaxy'
-        ? planets
-        : activeDimension.planets;
+        ? galaxyPlanets
+        : voidPlanets;
 
     const match =
       searchPlanets.find(
@@ -1603,18 +1703,18 @@ export default function App() {
 
   const displayedPlanets =
     mapDimension === 'galaxy'
-      ? planets
-      : activeDimension.planets;
+      ? galaxyPlanets
+      : voidPlanetsPositioned;
 
   const displayedConnections =
     mapDimension === 'galaxy'
-      ? connections
-      : activeDimension.connections;
+      ? galaxyConnections
+      : voidConnections;
 
   const displayedSectors =
     mapDimension === 'galaxy'
-      ? sectors
-      : activeDimension.sectors;
+      ? galaxySectors
+      : voidSectors;
 
   return (
     <div className="app">
@@ -1650,6 +1750,7 @@ export default function App() {
           planets={displayedPlanets}
           connections={displayedConnections}
           sectors={displayedSectors}
+          mapDimension={mapDimension}
           selectedPlanet={
             selectedPlanet
           }

@@ -39,3 +39,5 @@ fleet ships circle is too big - done
 basic equipment for seaf isnt in loadouts
 
 ship transit dosnt do anything
+
+delete void.js once actual void is implemented
