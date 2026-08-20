@@ -22,6 +22,7 @@ export default function GalaxyMap({
   planets,
   connections,
   sectors,
+  mapDimension = 'galaxy',
   selectedPlanet,
   selectedShip,
   ships,
@@ -84,25 +85,31 @@ export default function GalaxyMap({
    * ------------------------------------------------------------
    */
 
-  const flippedSectors = useMemo(
-    () =>
-      (Array.isArray(sectors) ? sectors : []).map((sector) => ({
+  const displayedSectors = useMemo(
+  () =>
+    (Array.isArray(sectors) ? sectors : []).map(
+      (sector) => ({
         ...sector,
 
         points: Array.isArray(sector.points)
           ? sector.points.map(([x, y]) => [
-            x,
-            flipY(y),
-          ])
+              x,
+              mapDimension === 'galaxy'
+                ? flipY(y)
+                : y,
+            ])
           : undefined,
 
         centerY:
           sector.centerY != null
-            ? flipY(sector.centerY)
+            ? mapDimension === 'galaxy'
+              ? flipY(sector.centerY)
+              : sector.centerY
             : sector.centerY,
-      })),
-    [sectors],
-  );
+      }),
+    ),
+  [sectors, mapDimension],
+);
 
   /*
    * ------------------------------------------------------------
@@ -142,14 +149,17 @@ export default function GalaxyMap({
    * ------------------------------------------------------------
    */
 
-  const flippedPlanets = useMemo(
-    () =>
-      positionedPlanets.map((planet) => ({
-        ...planet,
-        y: flipY(planet.y),
-      })),
-    [positionedPlanets],
-  );
+  const displayedPlanets = useMemo(
+  () =>
+    positionedPlanets.map((planet) => ({
+      ...planet,
+      y:
+        mapDimension === 'galaxy'
+          ? flipY(planet.y)
+          : planet.y,
+    })),
+  [positionedPlanets, mapDimension],
+);
 
   /*
    * ------------------------------------------------------------
@@ -175,12 +185,12 @@ export default function GalaxyMap({
    */
 
   const galaxyRadius = useMemo(() => {
-    if (flippedPlanets.length === 0) {
+    if (displayedPlanets.length === 0) {
       return 100;
     }
 
     const maximumDistance = Math.max(
-      ...flippedPlanets.map((planet) =>
+      ...displayedPlanets.map((planet) =>
         Math.hypot(
           planet.x - SVG_CENTER,
           planet.y - SVG_CENTER,
@@ -192,7 +202,7 @@ export default function GalaxyMap({
       470,
       maximumDistance + 20,
     );
-  }, [flippedPlanets]);
+  }, [displayedPlanets]);
 
   /*
    * ------------------------------------------------------------
@@ -333,11 +343,11 @@ export default function GalaxyMap({
             fill="rgba(8, 12, 18, 0.95)"
           />
 
-          {flippedSectors.map((sector) => (
+          {displayedSectors.map((sector) => (
             <Sector
               key={sector.id}
               sector={sector}
-              planets={flippedPlanets}
+              planets={displayedPlanets}
               showBox={true}
               showLabel={false}
             />
@@ -347,12 +357,12 @@ export default function GalaxyMap({
             ? connections
             : []
           ).map(([fromId, toId]) => {
-            const from = flippedPlanets.find(
+            const from = displayedPlanets.find(
               (planet) =>
                 String(planet.id) === String(fromId),
             );
 
-            const to = flippedPlanets.find(
+            const to = displayedPlanets.find(
               (planet) =>
                 String(planet.id) === String(toId),
             );
@@ -379,11 +389,11 @@ export default function GalaxyMap({
         ====================================================== */}
 
         <g>
-          {flippedSectors.map((sector) => (
+          {displayedSectors.map((sector) => (
             <Sector
               key={`label-${sector.id}`}
               sector={sector}
-              planets={flippedPlanets}
+              planets={displayedPlanets}
               galaxyRadius={galaxyRadius}
               showBox={false}
               showLabel={true}
@@ -438,7 +448,7 @@ export default function GalaxyMap({
         ====================================================== */}
 
         <g>
-          {flippedPlanets.map((planet) => {
+          {displayedPlanets.map((planet) => {
             const planetNameKey = normalizeKey(
               planet.name,
             );
@@ -513,6 +523,7 @@ export default function GalaxyMap({
                   ship={ship}
                   shipIndex={shipIndex}
                   shipCount={planetShips.length}
+                  mapDimension={mapDimension}
                   selected={
                     String(selectedShip?.id) ===
                     String(ship.id)

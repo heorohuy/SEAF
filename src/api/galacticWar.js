@@ -362,7 +362,7 @@ function getSectorFaction(planets) {
   return 'super-earth';
 }
 
-function buildSectors(planets) {
+export function buildSectors(planets) {
   const groups = new Map();
 
   for (const planet of planets) {

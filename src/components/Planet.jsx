@@ -23,9 +23,13 @@ export default function Planet({
   return (
     <g
       key={planet.id}
-      className={`planet-svg ${planet.faction} ${
-        selected ? 'selected' : ''
-      }`}
+      className={`planet-svg ${planet.faction} ${selected ? 'selected' : ''
+        }`}
+      data-source-planet={
+        planet.isSourcePlanet
+          ? 'true'
+          : undefined
+      }
       onClick={() => onSelect(planet)}
       onMouseDown={(e) => e.stopPropagation()}
       role="button"

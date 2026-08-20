@@ -1,16 +1,23 @@
-import { useRef, useState, useEffect, useCallback, } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo, } from 'react';
 import { Crosshair, Shield, Globe, ZoomIn, ZoomOut } from 'lucide-react';
 import GalaxyMap from './components/Map';
 
 import NavigationMenu from './components/NavigationMenu';
 
-import fetchGalacticMap from './api/galacticWar';
+import fetchGalacticMap, {
+  buildSectors,
+} from './api/galacticWar';
 
 import {
   planets as fallbackPlanets,
   connections as fallbackConnections,
   sectors as fallbackSectors,
 } from './data/galaxy';
+
+import {
+  MAP_DIMENSIONS,
+  DEFAULT_MAP_DIMENSION,
+} from './data/mapDimensions';
 
 import './App.css';
 
@@ -43,6 +50,8 @@ import {
 } from './api/shipTracking';
 
 import ShipPanel from './components/ShipPanel';
+
+
 
 const parseCellValue = (cell) => {
   if (cell == null) return undefined;
@@ -413,6 +422,14 @@ export default function App() {
       fallbackPlanets[0] ?? null,
     );
 
+  const [mapDimension, setMapDimension] = useState(
+    DEFAULT_MAP_DIMENSION,
+  );
+
+  const activeDimension =
+    MAP_DIMENSIONS[mapDimension] ||
+    MAP_DIMENSIONS[DEFAULT_MAP_DIMENSION];
+
   const [zoom, setZoom] = useState(1);
 
   const [offset, setOffset] = useState({
@@ -462,6 +479,27 @@ export default function App() {
   const [activeRegiment, setActiveRegiment] =
     useState(null);
 
+  const handleDimensionChange = (dimension) => {
+    if (!MAP_DIMENSIONS[dimension]) {
+      return;
+    }
+
+    setMapDimension(dimension);
+
+    setSelectedPlanet(null);
+    setSelectedShip(null);
+    setActiveFob(null);
+    setActiveRegiment(null);
+    setSearchTerm('');
+    setSearchError(null);
+
+    setZoom(1);
+    setOffset({
+      x: 0,
+      y: 0,
+    });
+  };
+
   // ==========================================================
   // HD2CLANS FLEET
   // ==========================================================
@@ -492,6 +530,136 @@ export default function App() {
   const fleetAbortControllerRef =
     useRef(null);
 
+  //////////////////////////
+  /////Void Dimension///////
+  //////////////////////////
+
+  const isVoidPlanet = (planet) =>
+    String(planet?.sector ?? '')
+      .trim()
+      .toLowerCase() === 'void';
+
+  const galaxyPlanets = useMemo(
+    () => planets.filter((planet) => !isVoidPlanet(planet)),
+    [planets],
+  );
+
+  const voidPlanets = useMemo(
+    () => planets.filter(isVoidPlanet),
+    [planets],
+  );
+
+  const voidPlanetsPositioned = useMemo(() => {
+    const positioned = voidPlanets.filter(
+      (planet) =>
+        Number.isFinite(planet?.x) &&
+        Number.isFinite(planet?.y),
+    );
+
+    if (positioned.length === 0) {
+      return [];
+    }
+
+    const SVG_SIZE = 960;
+    const SVG_CENTER = SVG_SIZE / 2;
+
+    /*
+     * The API planet coordinates use the same coordinate
+     * convention as the Galaxy map data.
+     *
+     * The Galaxy renderer flips Y for SVG.
+     *
+     * The Void should use that same visual orientation,
+     * but independently center its planets around their
+     * own center of mass.
+     */
+    const displayCoordinates = positioned.map(
+      (planet) => ({
+        ...planet,
+        y: SVG_SIZE - planet.y,
+      }),
+    );
+
+    const centerOfMass =
+      displayCoordinates.reduce(
+        (center, planet) => ({
+          x: center.x + planet.x,
+          y: center.y + planet.y,
+        }),
+        { x: 0, y: 0 },
+      );
+
+    centerOfMass.x /=
+      displayCoordinates.length;
+
+    centerOfMass.y /=
+      displayCoordinates.length;
+
+    return displayCoordinates.map(
+      (planet) => ({
+        ...planet,
+
+        x:
+          SVG_CENTER +
+          (planet.x - centerOfMass.x),
+
+        y:
+          SVG_CENTER +
+          (planet.y - centerOfMass.y),
+      }),
+    );
+  }, [voidPlanets]);
+
+  const galaxyPlanetIds = useMemo(
+    () =>
+      new Set(
+        galaxyPlanets.map((planet) =>
+          String(planet.id),
+        ),
+      ),
+    [galaxyPlanets],
+  );
+
+  const voidPlanetIds = useMemo(
+    () =>
+      new Set(
+        voidPlanets.map((planet) =>
+          String(planet.id),
+        ),
+      ),
+    [voidPlanets],
+  );
+
+  const galaxyConnections = useMemo(
+    () =>
+      connections.filter(
+        ([fromId, toId]) =>
+          galaxyPlanetIds.has(String(fromId)) &&
+          galaxyPlanetIds.has(String(toId)),
+      ),
+    [connections, galaxyPlanetIds],
+  );
+
+  const voidConnections = useMemo(
+    () =>
+      connections.filter(
+        ([fromId, toId]) =>
+          voidPlanetIds.has(String(fromId)) &&
+          voidPlanetIds.has(String(toId)),
+      ),
+    [connections, voidPlanetIds],
+  );
+
+  const galaxySectors = useMemo(
+    () => buildSectors(galaxyPlanets),
+    [galaxyPlanets],
+  );
+
+  const voidSectors = useMemo(
+    () => buildSectors(voidPlanetsPositioned),
+    [voidPlanetsPositioned],
+  );
+
   /*
    * Centering is declared before the effects that
    * use it. This avoids React Compiler's
@@ -499,8 +667,7 @@ export default function App() {
    */
   const centerOnPlanet = useCallback(
     (planet, targetZoom) => {
-      const container =
-        mapContainerRef.current;
+      const container = mapContainerRef.current;
 
       if (
         !container ||
@@ -513,9 +680,7 @@ export default function App() {
         return;
       }
 
-      const rect =
-        container.getBoundingClientRect();
-
+      const rect = container.getBoundingClientRect();
       const svgSize = 960;
 
       const scale = Math.min(
@@ -523,8 +688,12 @@ export default function App() {
         rect.height / svgSize,
       );
 
-      const flippedY =
-        svgSize - planet.y;
+      // Galaxy coordinates are vertically flipped by Map.jsx.
+      // Void coordinates are rendered directly, so do not flip them.
+      const mapY =
+        mapDimension === 'galaxy'
+          ? svgSize - planet.y
+          : planet.y;
 
       const offsetX =
         -(planet.x - svgSize / 2) *
@@ -532,7 +701,7 @@ export default function App() {
         targetZoom;
 
       const offsetY =
-        -(flippedY - svgSize / 2) *
+        -(mapY - svgSize / 2) *
         scale *
         targetZoom;
 
@@ -540,58 +709,63 @@ export default function App() {
         x: offsetX,
         y: offsetY,
       });
-    },
-    [],
+    }, [mapDimension],
   );
 
   /*
    * Galactic map API.
    */
-useEffect(() => {
-  let mounted = true;
+  useEffect(() => {
+    let mounted = true;
 
-  const loadGalaxy = async () => {
-    try {
-      const data = await fetchGalacticMap();
+    const loadGalaxy = async () => {
+      try {
+        const data = await fetchGalacticMap();
 
-      if (!mounted) {
-        return;
+        if (!mounted) {
+          return;
+        }
+
+        if (data.planets?.length) {
+          setPlanets(data.planets);
+
+          setSelectedPlanet(
+            data.planets.find(
+              (planet) => planet.sector !== 'Void'
+            ) || data.planets[0]
+          );
+
+          setActiveFob(null);
+        }
+
+        if (data.connections) {
+          setConnections(data.connections);
+        }
+
+        if (data.sectors) {
+          setSectors(data.sectors);
+        }
+
+        setError(null);
+      } catch (err) {
+        if (!mounted) {
+          return;
+        }
+
+        setError(err?.message || String(err));
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
+    };
 
-      if (data.planets?.length) {
-        setPlanets(data.planets);
-        setSelectedPlanet(data.planets[0]);
-        setActiveFob(null);
-      }
+    void loadGalaxy();
 
-      if (data.connections) {
-        setConnections(data.connections);
-      }
-
-      if (data.sectors) {
-        setSectors(data.sectors);
-      }
-
-      setError(null);
-    } catch (err) {
-      if (!mounted) {
-        return;
-      }
-
-      setError(err?.message || String(err));
-    } finally {
-      if (mounted) {
-        setLoading(false);
-      }
-    }
-  };
-
-  void loadGalaxy();
-
-  return () => {
-    mounted = false;
-  };
-}, []);
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   /*
    * HD2Clans fleet polling.
@@ -1103,6 +1277,40 @@ useEffect(() => {
     };
   }, []);
 
+  useEffect(() => {
+    if (!MAP_DIMENSIONS[mapDimension]) {
+      return;
+    }
+
+    setZoom(1);
+    setOffset({
+      x: 0,
+      y: 0,
+    });
+
+    setSelectedShip(null);
+    setActiveFob(null);
+    setActiveRegiment(null);
+    setSearchTerm('');
+    setSearchError(null);
+
+    if (mapDimension === 'galaxy') {
+      const firstGalaxyPlanet =
+        galaxyPlanets[0] || null;
+
+      setSelectedPlanet(firstGalaxyPlanet);
+    } else {
+      const firstVoidPlanet =
+        voidPlanetsPositioned[0] || null;
+
+      setSelectedPlanet(firstVoidPlanet);
+    }
+  }, [
+    mapDimension,
+    galaxyPlanets,
+    voidPlanetsPositioned,
+  ]);
+
   /*
    * Mouse map movement.
    */
@@ -1208,6 +1416,27 @@ useEffect(() => {
       });
     };
 
+  const handleCenterOnDimension = () => {
+    if (mapDimension === 'galaxy') {
+      handleCenterOnSuperEarth();
+      return;
+    }
+
+    setSelectedPlanet(null);
+    setSelectedShip(null);
+    setActiveFob(null);
+    setActiveRegiment(null);
+
+    const targetZoom = 6;
+
+    setZoom(targetZoom);
+
+    setOffset({
+      x: 0,
+      y: 0,
+    });
+  };
+
   /*
    * Planet search.
    */
@@ -1229,8 +1458,13 @@ useEffect(() => {
       return;
     }
 
+    const searchPlanets =
+      mapDimension === 'galaxy'
+        ? galaxyPlanets
+        : voidPlanetsPositioned;
+
     const match =
-      planets.find(
+      searchPlanets.find(
         (planet) =>
           planet.name
             ?.toLowerCase()
@@ -1480,76 +1714,45 @@ useEffect(() => {
     return 'health-good';
   };
 
+  const displayedPlanets =
+    mapDimension === 'galaxy'
+      ? galaxyPlanets
+      : voidPlanetsPositioned;
+
+  const displayedConnections =
+    mapDimension === 'galaxy'
+      ? galaxyConnections
+      : voidConnections;
+
+  const displayedSectors =
+    mapDimension === 'galaxy'
+      ? galaxySectors
+      : voidSectors;
+
   return (
     <div className="app">
-      {/* <header className="top-bar">
-        <div
-          className={`logo ${logoExpanded
-              ? 'expanded'
-              : ''
-            }`}
-          onClick={() =>
-            setLogoExpanded(
-              (previous) =>
-                !previous,
-            )
-          }
-        >
-          <Shield size={24} />
-
-          <span>
-            S.E.A.F. -
-            L.E.M.O.N
-          </span>
-
-          {logoExpanded && (
-            <div className="logo-expanded">
-              <div>
-                SUPER EARTH ARMED
-                FORCES
-              </div>
-
-              <div>
-                LOGISTICS &
-                EMERGENCY
-                MOVEMENT
-                OPERATIONS
-                NETWORK
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="war-status">
-          <span>
-            WAR STATUS
-          </span>
-
-          <strong>
-            ACTIVE
-          </strong>
-        </div>
-
-        <NavigationMenu />
-      </header> */}
 
       <SiteHeader
-              databaseStatus={{
-                state: loading
-                  ? 'loading'
-                  : error
-                    ? 'error'
-                    : 'online',
-                label: loading
-                  ? 'SYNCING'
-                  : error
-                    ? 'OFFLINE'
-                    : 'ONLINE',
-              }}
-            />
+        databaseStatus={{
+          state: loading
+            ? 'loading'
+            : error
+              ? 'error'
+              : 'online',
+          label: loading
+            ? 'SYNCING'
+            : error
+              ? 'OFFLINE'
+              : 'ONLINE',
+        }}
+      />
 
-      <main className="galaxy">
-        <div className="stars" />
+      <main
+        className={`galaxy galaxy--${mapDimension}`}
+      >
+        <div
+          className={`stars stars--${mapDimension}`}
+        />
 
         {/* <div className="ad-strip">
           <AdBanner />
@@ -1557,11 +1760,10 @@ useEffect(() => {
 
         <GalaxyMap
           containerRef={mapContainerRef}
-          planets={planets}
-          connections={
-            connections
-          }
-          sectors={sectors}
+          planets={displayedPlanets}
+          connections={displayedConnections}
+          sectors={displayedSectors}
+          mapDimension={mapDimension}
           selectedPlanet={
             selectedPlanet
           }
@@ -1608,78 +1810,100 @@ useEffect(() => {
           }
         />
 
-        <div
-          className="map-title"
-          onClick={
-            handleCenterOnSuperEarth
-          }
-          role="button"
-          tabIndex={0}
-          title="Center map on Super Earth"
-          onKeyDown={(event) => {
-            if (
-              event.key ===
-              'Enter' ||
-              event.key === ' '
-            ) {
-              event.preventDefault();
-
-              handleCenterOnSuperEarth();
+        <div className="map-title">
+          <button
+            type="button"
+            className="map-center-button"
+            onClick={handleCenterOnDimension}
+            aria-label={
+              mapDimension === 'galaxy'
+                ? 'Center Galactic Map'
+                : 'Center Void Map'
             }
-          }}
-        >
-          <Crosshair size={18} />
+            title={
+              mapDimension === 'galaxy'
+                ? 'Center Galactic Map'
+                : 'Center Void Map'
+            }
+          >
+            <Crosshair size={18} />
+          </button>
 
-          <span>
-            GALACTIC MAP
+          <label
+            className="map-dimension-selector"
+            htmlFor="map-dimension"
+          >
+            <span className="map-dimension-label">
+              MAP Center
+            </span>
+
+            <select
+              id="map-dimension"
+              value={mapDimension}
+              onChange={(event) =>
+                handleDimensionChange(
+                  event.target.value,
+                )
+              }
+              aria-label="Select map space"
+            >
+              {Object.values(MAP_DIMENSIONS).map(
+                (dimension) => (
+                  <option
+                    key={dimension.id}
+                    value={dimension.id}
+                  >
+                    {dimension.label}
+                  </option>
+                ),
+              )}
+            </select>
+          </label>
+
+          <span className="map-dimension-description">
+            {activeDimension.description}
           </span>
 
-          {loading && (
-            <span
-              style={{
-                marginLeft: 8,
-                color: '#8f9aa5',
-                fontSize: 10,
-              }}
-            >
-              LOADING…
-            </span>
-          )}
+          {mapDimension === 'galaxy' &&
+            loading && (
+              <span
+                className="map-status-loading"
+              >
+                LOADING…
+              </span>
+            )}
 
-          {error && (
-            <span
-              style={{
-                marginLeft: 8,
-                color: '#ff6b6b',
-                fontSize: 10,
-              }}
-            >
-              API ERROR
-            </span>
-          )}
+          {mapDimension === 'galaxy' &&
+            error && (
+              <span
+                className="map-status-error"
+              >
+                API ERROR
+              </span>
+            )}
 
-          {shipLoading && (
-            <span
-              style={{
-                marginLeft: 8,
-                color: '#ffd166',
-                fontSize: 10,
-              }}
-            >
-              FLEET SYNC…
-            </span>
-          )}
+          {mapDimension === 'galaxy' &&
+            shipLoading && (
+              <span
+                className="map-status-fleet"
+              >
+                FLEET SYNC…
+              </span>
+            )}
 
-          {shipError && (
-            <span
-              style={{
-                marginLeft: 8,
-                color: '#ff8a8a',
-                fontSize: 10,
-              }}
-              title={shipError}
-            >
-              FLEET API ERROR
+          {mapDimension === 'galaxy' &&
+            shipError && (
+              <span
+                className="map-status-error"
+                title={shipError}
+              >
+                FLEET API ERROR
+              </span>
+            )}
+
+          {mapDimension === 'void' && (
+            <span className="map-status-void">
+              SIGNAL DISTORTION
             </span>
           )}
         </div>
@@ -1739,33 +1963,48 @@ useEffect(() => {
         </div>
 
         <div className="legend-panel">
-          <span>
-            LEGEND
-          </span>
+          <span>LEGEND</span>
 
-          <div className="legend-row">
-            <span className="legend-dot super-earth" />
-            {' '}
-            Super Earth
-          </div>
+          {mapDimension === 'galaxy' ? (
+            <>
+              <div className="legend-row">
+                <span className="legend-dot super-earth" />
+                Super Earth
+              </div>
 
-          <div className="legend-row">
-            <span className="legend-dot automatons" />
-            {' '}
-            Automatons
-          </div>
+              <div className="legend-row">
+                <span className="legend-dot automatons" />
+                Automatons
+              </div>
 
-          <div className="legend-row">
-            <span className="legend-dot terminids" />
-            {' '}
-            Terminids
-          </div>
+              <div className="legend-row">
+                <span className="legend-dot terminids" />
+                Terminids
+              </div>
 
-          <div className="legend-row">
-            <span className="legend-dot illuminate" />
-            {' '}
-            Illuminate
-          </div>
+              <div className="legend-row">
+                <span className="legend-dot illuminate" />
+                Illuminate
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="legend-row">
+                <span className="legend-dot illuminate" />
+                Illuminate
+              </div>
+
+              <div className="legend-row">
+                <span className="legend-dot void-source" />
+                Source Planet
+              </div>
+
+              <div className="legend-row">
+                <span className="legend-dot void-unknown" />
+                Unidentified
+              </div>
+            </>
+          )}
         </div>
 
         {selectedShip ? (
@@ -2100,8 +2339,8 @@ useEffect(() => {
                             className={`regiment-button ${getFdpHealthClass(
                               regiment.fdp,
                             )} ${isActive
-                                ? 'active'
-                                : ''
+                              ? 'active'
+                              : ''
                               }`}
                             type="button"
                             onClick={() => {
