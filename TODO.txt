@@ -48,4 +48,6 @@ on initial load of the void. should be zoomed in as if the button was pressed - 
 
 create a zone that shows the void in the main map as is in the game
 
-have the first regiment be selected and open when launching
+have the first regiment be selected and open when launching - done
+
+when switching galaxy/void, should zoom on the regiment in peril

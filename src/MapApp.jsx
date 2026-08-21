@@ -1008,6 +1008,8 @@ export default function App() {
         targetPlanet,
         initialZoom,
       );
+
+      setActiveRegiment(firstRegiment);
     });
   }, [
     firstRegiment,
