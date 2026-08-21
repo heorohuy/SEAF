@@ -1282,7 +1282,9 @@ export default function App() {
       return;
     }
 
-    setZoom(1);
+    const targetZoom = mapDimension === 'void' ? 6 : 1;
+
+    setZoom(targetZoom);
     setOffset({
       x: 0,
       y: 0,
@@ -1297,19 +1299,16 @@ export default function App() {
     if (mapDimension === 'galaxy') {
       const firstGalaxyPlanet =
         galaxyPlanets[0] || null;
-
       setSelectedPlanet(firstGalaxyPlanet);
     } else {
-      const firstVoidPlanet =
-        voidPlanetsPositioned[0] || null;
-
-      setSelectedPlanet(firstVoidPlanet);
+      setSelectedPlanet(null);
     }
   }, [
     mapDimension,
     galaxyPlanets,
     voidPlanetsPositioned,
   ]);
+
 
   /*
    * Mouse map movement.
@@ -1440,21 +1439,13 @@ export default function App() {
   /*
    * Planet search.
    */
-  const handleSearchSubmit = (
-    event,
-  ) => {
+  const handleSearchSubmit = (event) => {
     event.preventDefault();
 
-    const query =
-      searchTerm
-        .trim()
-        .toLowerCase();
+    const query = searchTerm.trim().toLowerCase();
 
     if (!query) {
-      setSearchError(
-        'Enter a planet name',
-      );
-
+      setSearchError('Enter a search term');
       return;
     }
 
@@ -1463,43 +1454,185 @@ export default function App() {
         ? galaxyPlanets
         : voidPlanetsPositioned;
 
-    const match =
-      searchPlanets.find(
-        (planet) =>
-          planet.name
-            ?.toLowerCase()
-            .includes(query) ||
-          planet.id
-            ?.toLowerCase()
-            .includes(query),
-      );
+    const searchZoom = 6;
 
-    if (!match) {
-      setSearchError(
-        'No matching planet found',
-      );
+    /*
+     * ------------------------------------------------------------
+     * 1. Search planets
+     * ------------------------------------------------------------
+     */
+    const planetMatch = searchPlanets.find(
+      (planet) =>
+        String(planet.name ?? '')
+          .toLowerCase()
+          .includes(query) ||
+        String(planet.id ?? '')
+          .toLowerCase()
+          .includes(query),
+    );
+
+    if (planetMatch) {
+      setSearchError(null);
+      setSelectedPlanet(planetMatch);
+      setSelectedShip(null);
+      setActiveFob(null);
+      setActiveRegiment(null);
+      setZoom(searchZoom);
+
+      requestAnimationFrame(() => {
+        centerOnPlanet(planetMatch, searchZoom);
+      });
 
       return;
     }
 
-    setSearchError(null);
+    /*
+     * ------------------------------------------------------------
+     * 2. Search FOBs
+     * ------------------------------------------------------------
+     */
+    for (const [planetKey, fobs] of Object.entries(fobMap)) {
+      if (!Array.isArray(fobs)) {
+        continue;
+      }
 
-    setSelectedPlanet(match);
-    setSelectedShip(null);
-    setActiveFob(null);
-    setActiveRegiment(null);
-
-    const searchZoom = 6;
-
-    setZoom(searchZoom);
-
-    requestAnimationFrame(() => {
-      centerOnPlanet(
-        match,
-        searchZoom,
+      const fobMatch = fobs.find((fob) =>
+        String(fob?.name ?? '')
+          .toLowerCase()
+          .includes(query),
       );
-    });
+
+      if (!fobMatch) {
+        continue;
+      }
+
+      const planetMatch = searchPlanets.find(
+        (planet) =>
+          normalizeKey(planet.name) === planetKey ||
+          normalizeKey(planet.id) === planetKey,
+      );
+
+      if (!planetMatch) {
+        continue;
+      }
+
+      setSearchError(null);
+      setSelectedPlanet(planetMatch);
+      setSelectedShip(null);
+      setActiveRegiment(null);
+      setActiveFob(fobMatch);
+      setZoom(searchZoom);
+
+      requestAnimationFrame(() => {
+        centerOnPlanet(planetMatch, searchZoom);
+      });
+
+      return;
+    }
+
+    /*
+     * ------------------------------------------------------------
+     * 3. Search regiments
+     * ------------------------------------------------------------
+     */
+    for (const [planetKey, regiments] of Object.entries(
+      regimentMap,
+    )) {
+      if (!Array.isArray(regiments)) {
+        continue;
+      }
+
+      const regimentMatch = regiments.find(
+        (regiment) =>
+          String(regiment?.name ?? '')
+            .toLowerCase()
+            .includes(query) ||
+          String(regiment?.specialty ?? '')
+            .toLowerCase()
+            .includes(query),
+      );
+
+      if (!regimentMatch) {
+        continue;
+      }
+
+      const planetMatch = searchPlanets.find(
+        (planet) =>
+          normalizeKey(planet.name) === planetKey ||
+          normalizeKey(planet.id) === planetKey,
+      );
+
+      if (!planetMatch) {
+        continue;
+      }
+
+      setSearchError(null);
+      setSelectedPlanet(planetMatch);
+      setSelectedShip(null);
+      setActiveFob(null);
+      setActiveRegiment(regimentMatch);
+      setZoom(searchZoom);
+
+      requestAnimationFrame(() => {
+        centerOnPlanet(planetMatch, searchZoom);
+      });
+
+      return;
+    }
+
+    /*
+     * ------------------------------------------------------------
+     * 4. Search ships
+     * ------------------------------------------------------------
+     */
+    if (mapDimension === 'galaxy') {
+      const shipMatch = ships.find(
+        (ship) =>
+          String(ship?.name ?? '')
+            .toLowerCase()
+            .includes(query) ||
+          String(ship?.id ?? '')
+            .toLowerCase()
+            .includes(query),
+      );
+
+      if (shipMatch) {
+        setSearchError(null);
+        setSelectedShip(shipMatch);
+        setSelectedPlanet(null);
+        setActiveFob(null);
+        setActiveRegiment(null);
+
+        const location = shipMatch?.condition?.location;
+
+        const shipPlanet = galaxyPlanets.find(
+          (planet) =>
+            normalizeKey(planet.name) ===
+            normalizeKey(location) ||
+            normalizeKey(planet.id) ===
+            normalizeKey(location),
+        );
+
+        if (shipPlanet) {
+          setZoom(searchZoom);
+
+          requestAnimationFrame(() => {
+            centerOnPlanet(
+              shipPlanet,
+              searchZoom,
+            );
+          });
+        }
+
+        return;
+      }
+    }
+
+    setSearchError(
+      'No matching planet, FOB, regiment, or ship found',
+    );
   };
+
 
   const getFobsForPlanet = (
     planet,
@@ -1923,13 +2056,12 @@ export default function App() {
               type="search"
               value={searchTerm}
               onChange={(event) =>
-                setSearchTerm(
-                  event.target.value,
-                )
+                setSearchTerm(event.target.value)
               }
-              placeholder="Search planet or id"
-              aria-label="Search planet"
+              placeholder="Search planet, FOB, regiment, or ship"
+              aria-label="Search planet, FOB, regiment, or ship"
             />
+
 
             <button type="submit">
               Find
