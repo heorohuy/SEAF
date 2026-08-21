@@ -327,8 +327,7 @@
   display: grid;
 
   grid-template-columns:
-    repeat(auto-fit,
-      minmax(390px, 1fr));
+    repeat(5, minmax(0, 1fr));
 
   gap: 14px;
 
