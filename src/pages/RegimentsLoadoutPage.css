@@ -524,7 +524,7 @@
 
 .regiment-stratagem {
   position: relative;
-
+  width: 64px;
   min-width: 64px;
 
   display: flex;
@@ -672,38 +672,45 @@
 /* -------------------------------------------------------------------------- */
 
 .regiment-stratagem-details {
-  width: min(360px,
-      calc(100vw - 72px));
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  z-index: 20;
 
-  margin-top: 10px;
-
+  width: min(360px, calc(100vw - 72px));
+  margin-top: 0;
   padding: 13px 14px;
 
+  transform: translateX(-50%);
+
   background:
-    linear-gradient(135deg,
+    linear-gradient(
+      135deg,
       rgba(14, 22, 27, 0.98),
-      rgba(7, 12, 16, 0.98));
+      rgba(7, 12, 16, 0.98)
+    );
 
   border: 1px solid rgba(244, 185, 66, 0.25);
 
   box-shadow:
     0 12px 30px rgba(0, 0, 0, 0.3);
 
-  animation:
-    regiment-expand 140ms ease-out;
+  animation: regiment-expand 140ms ease-out;
 }
+
 
 @keyframes regiment-expand {
   from {
     opacity: 0;
-    transform: translateY(-4px);
+    transform: translate(-50%, -4px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate(-50%, 0);
   }
 }
+
 
 .regiment-stratagem-details-top {
   display: flex;

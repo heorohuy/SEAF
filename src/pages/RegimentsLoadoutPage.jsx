@@ -1120,6 +1120,28 @@ export default function RegimentsLoadoutPage() {
     setExpandedItem,
   ] = useState(null);
 
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setExpandedItem(null);
+      }
+    };
+
+    window.addEventListener(
+      "keydown",
+      handleKeyDown
+    );
+
+    return () => {
+      window.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
+    };
+  }, []);
+
+
+
   /*
    * -------------------------------------------------------------------------
    * LOAD STRATAGEM CATALOG
@@ -1344,38 +1366,6 @@ export default function RegimentsLoadoutPage() {
 
   return (
     <div className="regiments-page">
-      {/* <header className="regiments-header">
-        <div className="regiments-header-title">
-          <Shield size={22} />
-
-          <div>
-            <span>
-              S.E.A.F. // L.E.M.O.N
-            </span>
-
-            <small>
-              REGIMENT LOADOUT DATABASE
-            </small>
-          </div>
-        </div>
-
-        <div className="regiments-header-status">
-          <span>
-            DATABASE
-          </span>
-
-          <strong>
-            {loading
-              ? "SYNCING"
-              : stratagemCatalog.length > 0
-                ? "ONLINE"
-                : "PARTIAL"}
-          </strong>
-
-        </div>
-
-        <NavigationMenu />
-      </header> */}
 
       <SiteHeader
         databaseStatus={{
