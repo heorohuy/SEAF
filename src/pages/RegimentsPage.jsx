@@ -468,21 +468,21 @@ export default function RegimentsPage() {
             </header> */}
 
             <SiteHeader
-                    databaseStatus={{
-                      state: loading
+                databaseStatus={{
+                    state: loading
                         ? 'loading'
                         : error
-                          ? 'error'
-                          : 'online',
-                      label: loading
+                            ? 'error'
+                            : 'online',
+                    label: loading
                         ? 'SYNCING'
                         : error
-                          ? 'OFFLINE'
-                          : 'ONLINE',
-                    }}
-                  >
-                      <AuthButton />
-</SiteHeader>
+                            ? 'OFFLINE'
+                            : 'ONLINE',
+                }}
+            >
+                <AuthButton />
+            </SiteHeader>
 
 
             <main className="planets-content">
