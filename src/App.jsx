@@ -9,6 +9,10 @@ import GuidePage from "./pages/GuidePage.jsx";
 import PrivacyPage from "./pages/PrivacyPage.jsx";
 import AboutPage from "./pages/AboutPage.jsx";
 import TermsPage from "./pages/TermsPage.jsx";
+import LoginPage from './pages/LoginPage.jsx';
+import RegisterPage from './pages/RegisterPage.jsx';
+import AuthCallbackPage from './pages/AuthCallbackPage.jsx';
+
 
 
 export default function App() {
@@ -37,6 +41,21 @@ export default function App() {
       <Route
         path="/ships"
         element={<ShipsPage />}
+      />
+
+      <Route
+        path="/login"
+        element={<LoginPage />}
+      />
+
+      <Route
+        path="/register"
+        element={<RegisterPage />}
+      />
+
+      <Route
+        path="/auth/callback"
+        element={<AuthCallbackPage />}
       />
 
       <Route

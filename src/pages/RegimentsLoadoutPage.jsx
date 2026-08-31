@@ -26,6 +26,7 @@ import {
 import "./RegimentsLoadoutPage.css";
 import SiteFooter from "../components/SiteFooter.jsx";
 import SiteHeader from "../components/SiteHeader.jsx";
+import AuthButton from './components/AuthButton.jsx';
 
 
 /*
@@ -1385,7 +1386,9 @@ export default function RegimentsLoadoutPage() {
                 ? 'ONLINE'
                 : 'PARTIAL',
         }}
-      />
+      >
+        <AuthButton />
+      </SiteHeader>
 
 
       <main className="regiments-content">

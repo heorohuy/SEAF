@@ -13,6 +13,7 @@ import {
 import NavigationMenu from "../components/NavigationMenu";
 import SiteFooter from "../components/SiteFooter";
 import SiteHeader from "../components/SiteHeader";
+import AuthButton from './components/AuthButton.jsx';
 
 import { getSheetData } from "../api/sicarisRegiments.js";
 
@@ -479,7 +480,9 @@ export default function RegimentsPage() {
                           ? 'OFFLINE'
                           : 'ONLINE',
                     }}
-                  />
+                  >
+                      <AuthButton />
+</SiteHeader>
 
 
             <main className="planets-content">
