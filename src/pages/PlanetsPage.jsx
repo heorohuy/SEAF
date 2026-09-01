@@ -17,7 +17,7 @@ import './PlanetsPage.css';
 
 import SiteFooter from "../components/SiteFooter";
 import SiteHeader from '../components/SiteHeader';
-import AuthButton from './components/AuthButton.jsx';
+import AuthButton from '../components/AuthButton.jsx';
 
 
 
