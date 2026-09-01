@@ -35,6 +35,8 @@ import sapperIcon from './assets/1986-JJ-SEAFICONS-SAPPER.png';
 
 import SiteFooter from './components/SiteFooter';
 import SiteHeader from './components/SiteHeader';
+import AuthButton from './components/AuthButton.jsx';
+
 
 // HD2Clans
 import {
@@ -1880,7 +1882,9 @@ export default function App() {
               ? 'OFFLINE'
               : 'ONLINE',
         }}
-      />
+      >
+        <AuthButton />
+      </SiteHeader>
 
       <main
         className={`galaxy galaxy--${mapDimension}`}

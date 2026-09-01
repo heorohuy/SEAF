@@ -17,6 +17,7 @@ import './PlanetsPage.css';
 
 import SiteFooter from "../components/SiteFooter";
 import SiteHeader from '../components/SiteHeader';
+import AuthButton from '../components/AuthButton.jsx';
 
 
 
@@ -339,7 +340,9 @@ export default function PlanetsPage() {
               ? 'OFFLINE'
               : 'ONLINE',
         }}
-      />
+      >
+        <AuthButton />
+      </SiteHeader>
 
       <main className="planets-content">
         <section className="planets-heading">

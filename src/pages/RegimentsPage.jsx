@@ -13,6 +13,7 @@ import {
 import NavigationMenu from "../components/NavigationMenu";
 import SiteFooter from "../components/SiteFooter";
 import SiteHeader from "../components/SiteHeader";
+import AuthButton from '../components/AuthButton.jsx';
 
 import { getSheetData } from "../api/sicarisRegiments.js";
 
@@ -467,19 +468,21 @@ export default function RegimentsPage() {
             </header> */}
 
             <SiteHeader
-                    databaseStatus={{
-                      state: loading
+                databaseStatus={{
+                    state: loading
                         ? 'loading'
                         : error
-                          ? 'error'
-                          : 'online',
-                      label: loading
+                            ? 'error'
+                            : 'online',
+                    label: loading
                         ? 'SYNCING'
                         : error
-                          ? 'OFFLINE'
-                          : 'ONLINE',
-                    }}
-                  />
+                            ? 'OFFLINE'
+                            : 'ONLINE',
+                }}
+            >
+                <AuthButton />
+            </SiteHeader>
 
 
             <main className="planets-content">
