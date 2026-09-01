@@ -31,7 +31,7 @@ export default function AuthButton() {
   const handleLogout = async () => {
     try {
       await signOut();
-      navigate('/login');
+      navigate('/', { replace: true });
     } catch (error) {
       console.error(
         'Failed to sign out:',
@@ -39,6 +39,7 @@ export default function AuthButton() {
       );
     }
   };
+
 
   return (
     <button

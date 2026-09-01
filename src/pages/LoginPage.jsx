@@ -1,22 +1,22 @@
 import { useState } from 'react';
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+
 import './LoginPage.css';
 
+const DISCORD_INVITE_URL =
+  'https://discord.com/invite/9FRFae3Bf6';
+
 export default function LoginPage() {
-  const navigate = useNavigate();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const { isAuthenticated } = useAuth();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-
   const [loading, setLoading] = useState(false);
-  const [oauthLoading, setOauthLoading] = useState(null);
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
 
   const redirectTo =
     location.state?.from?.pathname || '/';
@@ -25,34 +25,12 @@ export default function LoginPage() {
     return <Navigate to={redirectTo} replace />;
   }
 
-  const handleEmailLogin = async (event) => {
-    event.preventDefault();
-
+  const handleDiscordLogin = async () => {
     setLoading(true);
     setError('');
-    setMessage('');
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
-
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-      return;
-    }
-
-    navigate(redirectTo, { replace: true });
-  };
-
-  const handleOAuthLogin = async (provider) => {
-    setOauthLoading(provider);
-    setError('');
-    setMessage('');
 
     const { error } = await supabase.auth.signInWithOAuth({
-      provider,
+      provider: 'discord',
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
       },
@@ -60,15 +38,23 @@ export default function LoginPage() {
 
     if (error) {
       setError(error.message);
-      setOauthLoading(null);
+      setLoading(false);
     }
+  };
+
+  const handleDiscordInvite = () => {
+    window.open(
+      DISCORD_INVITE_URL,
+      '_blank',
+      'noopener,noreferrer',
+    );
   };
 
   return (
     <main className="auth-page">
       <section className="auth-card">
         <div className="auth-classification">
-          S.E.A.F. // L.E.M.O.N
+          S.E.A.F. // L.E.M.E.N
         </div>
 
         <h1>PERSONNEL AUTHENTICATION</h1>
@@ -80,91 +66,47 @@ export default function LoginPage() {
         <div className="auth-social-buttons">
           <button
             type="button"
-            className="auth-button auth-button-google"
-            disabled={loading || oauthLoading}
-            onClick={() => handleOAuthLogin('google')}
+            className="auth-button auth-button-discord"
+            onClick={handleDiscordInvite}
           >
-            {oauthLoading === 'google'
-              ? 'CONNECTING...'
-              : 'CONTINUE WITH GOOGLE'}
+            JOIN DISCORD
           </button>
 
           <button
             type="button"
             className="auth-button auth-button-discord"
-            disabled={loading || oauthLoading}
-            onClick={() => handleOAuthLogin('discord')}
+            disabled={loading}
+            onClick={handleDiscordLogin}
           >
-            {oauthLoading === 'discord'
+            {loading
               ? 'CONNECTING...'
               : 'CONTINUE WITH DISCORD'}
           </button>
         </div>
 
-        <div className="auth-divider">
-          <span>OR</span>
-        </div>
+        {error && (
+          <div className="auth-error">
+            {error}
+          </div>
+        )}
 
-        <form
-          className="auth-form"
-          onSubmit={handleEmailLogin}
-        >
-          <label htmlFor="email">
-            EMAIL
-          </label>
-
-          <input
-            id="email"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
-
-          <label htmlFor="password">
-            PASSWORD
-          </label>
-
-          <input
-            id="password"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-
-          {error && (
-            <div className="auth-error">
-              {error}
-            </div>
-          )}
-
-          {message && (
-            <div className="auth-success">
-              {message}
-            </div>
-          )}
-
+        <div className="auth-return">
           <button
-            type="submit"
-            className="auth-button auth-button-primary"
-            disabled={loading || oauthLoading}
+            type="button"
+            className="auth-return-link"
+            onClick={() => navigate('/')}
           >
-            {loading ? 'AUTHENTICATING...' : 'LOGIN'}
+            RETURN TO MAP
           </button>
-        </form>
-
-        <div className="auth-links">
-          <Link to="/register">
-            CREATE ACCOUNT
-          </Link>
-
-          <Link to="/forgot-password">
-            FORGOT PASSWORD?
-          </Link>
         </div>
+
+
+
+        {error && (
+          <div className="auth-error">
+            {error}
+          </div>
+        )}
       </section>
     </main>
   );
