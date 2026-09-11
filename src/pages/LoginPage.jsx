@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import './LoginPage.css';
 
 const DISCORD_INVITE_URL =
-  'https://discord.com/invite/9FRFae3Bf6';
+  'https://discord.gg/Ay9u3DU75n';
 
 export default function LoginPage() {
   const location = useLocation();
